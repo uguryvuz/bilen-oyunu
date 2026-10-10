@@ -463,19 +463,6 @@ body.rotate #rotate{display:flex}
         <p>Eski hamleleri yavaş yavaş unuttuğu için stratejini değiştirirsen uyum sağlar. <span id="fTop"></span></p>
         <div id="fWeights"></div>
       </details>
-      <div class="cardb save" id="saveBox">
-        <h3>Skorunu kaydet <small style="color:var(--mute);font-weight:600">(isteğe bağlı)</small></h3>
-        <form id="saveForm" novalidate>
-          <label class="f" for="fNick">Takma ad</label>
-          <input id="fNick" type="text" maxlength="16" autocomplete="off" autocapitalize="off" spellcheck="false" aria-required="true">
-          <label class="f" for="fContact">İletişim (e-posta veya Instagram, isteğe bağlı)</label>
-          <input id="fContact" type="text" maxlength="60" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="ornek@mail.com veya @kullanici">
-          <label class="check"><input id="fConsent" type="checkbox"><span><span id="privText"></span> <a id="privLink" target="_blank" rel="noopener" hidden>Aydınlatma metni</a></span></label>
-          <p class="err" id="fErr" role="alert"></p>
-          <button class="btn2" id="btnSave" type="submit" aria-label="Skoru kaydet">Kaydet</button>
-        </form>
-        <p class="thanks" id="saveDone" hidden></p>
-      </div>
       <a id="btnJoin" class="cta join" target="_blank" rel="noopener" hidden><span class="j1">Topluluğumuza katıl</span><span class="j2" id="joinName"></span></a>
       <div class="cardb board" id="board" hidden>
         <h3>Liderlik tablosu</h3>
@@ -1445,7 +1432,6 @@ function finish() {
   el.res.classList.remove('go');
   el.final.scrollTop = 0;
   el.details.open = false;
-  el.saveForm.hidden = false; el.saveDone.hidden = true; el.fErr.textContent = ''; el.btnSave.disabled = false;
   setMood(avatars.analyze, 'analyze');
   el.fScore.textContent = '0';
   renderFinal(st);
@@ -1592,8 +1578,6 @@ function init() {
   for (let i = 0; i < CONFIG.ROUNDS; i++) { const s = document.createElement('i'); el.prog.appendChild(s); progEls.push(s); }
   const best = parseInt(store.get('bilen.best') || '0', 10) || 0;
   if (best) { $('bestLine').hidden = false; $('bestLine').textContent = 'En iyi skorun: ' + best; }
-  $('privText').textContent = CONFIG.PRIVACY_TEXT;
-  if (CONFIG.PRIVACY_URL) { const a = $('privLink'); a.href = CONFIG.PRIVACY_URL; a.hidden = false; }
   if (CONFIG.JOIN_URL) { el.btnJoin.href = CONFIG.JOIN_URL; el.btnJoin.hidden = false; $('joinName').textContent = CONFIG.COMMUNITY_NAME; }
   el.board.hidden = true;
   if (DEBUG) el.debug.hidden = false;
@@ -1612,7 +1596,6 @@ function init() {
   });
   el.btnMute.addEventListener('click', toggleMute);
   el.btnReplay.addEventListener('click', startGame);
-  el.saveForm.addEventListener('submit', onSave);
   $('btnResume').addEventListener('click', function () { el.pause.hidden = true; Clock.hold('away', false); Sfx.unlock(); });
   ['pointerdown', 'touchend', 'click'].forEach(function (t) { document.addEventListener(t, Sfx.unlock, { passive: true, capture: true }); });
   document.addEventListener('visibilitychange', onVisibility);
