@@ -1,0 +1,1630 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#2340e0">
+<meta name="description" content="BİLEN: seni öğrenen yapay zekâya karşı Taş-Kağıt-Makas.">
+<title>BİLEN</title>
+<link rel="icon" href="data:,">
+<!-- Optional display font. If the stand has no internet the stack below falls back to Arial Black / system fonts. -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Unbounded:wght@700;800&display=swap">
+<style>
+/* ---------- Tokens ----------
+   Two color fields, like the two sides of a table in a hand game:
+   cobalt = BİLEN's side, sun yellow = your side. Everything else is white or mist. */
+:root{
+  --blue:#2340e0;--blue-d:#1429a3;--ink:#0f1b66;--mute:#5a64a8;
+  --sun:#ffd23f;--sun-d:#d9a400;--mist:#e9ecff;--white:#fff;
+  --win:#0b7a45;--lose:#d6103f;
+  --display:"Unbounded","Arial Black","Segoe UI Black","Helvetica Neue",system-ui,sans-serif;
+  --u:1vh;--card:96px;--av-h:96px;--move-h:80px;--hero-h:130px;--logo-fs:48px;--rhythm-fs:22px;
+}
+@supports (height:1dvh){:root{--u:1dvh}}
+@supports (width:clamp(1px,2px,3px)){
+  :root{
+    --card:clamp(84px,min(27vw,calc(var(--u)*16)),120px);
+    --av-h:clamp(80px,calc(var(--u)*15),120px);
+    --move-h:clamp(74px,calc(var(--u)*12.5),94px);
+    --hero-h:clamp(120px,calc(var(--u)*26),220px);
+    --logo-fs:clamp(38px,calc(var(--u)*7.5),58px);
+    --rhythm-fs:clamp(18px,calc(var(--u)*3.4),26px);
+  }
+}
+
+/* ---------- Base ---------- */
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;overscroll-behavior:none}
+body{background:var(--blue-d);color:var(--ink);font:16px/1.35 system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+  -webkit-text-size-adjust:100%;display:flex;justify-content:center;align-items:center;overflow:hidden;
+  -webkit-user-select:none;user-select:none;-webkit-touch-callout:none;touch-action:manipulation}
+[hidden]{display:none!important}
+button,a{font:inherit;color:inherit;touch-action:manipulation;-webkit-user-select:none;user-select:none}
+button{border:0;background:none;cursor:pointer}
+a{text-decoration:none}
+input{font:inherit;font-size:16px;color:inherit;-webkit-user-select:text;user-select:text;touch-action:manipulation}
+svg{display:block}
+:focus-visible{outline:3px solid var(--ink);outline-offset:3px}
+.intro :focus-visible,.zb :focus-visible,.overlay :focus-visible,.final.is-analyzing :focus-visible{outline-color:#fff}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+
+#app{position:relative;width:100%;max-width:440px;height:100vh;height:100dvh;max-height:960px;overflow:hidden;background:var(--blue)}
+.screen{position:absolute;top:0;right:0;bottom:0;left:0;display:none;z-index:1;
+  padding:12px 16px 14px;
+  padding:calc(env(safe-area-inset-top,0px) + 12px) calc(env(safe-area-inset-right,0px) + 16px) calc(env(safe-area-inset-bottom,0px) + 14px) calc(env(safe-area-inset-left,0px) + 16px)}
+.screen.active{display:flex;flex-direction:column}
+
+/* ---------- BİLEN character (flat, no glow) ---------- */
+.bilen{display:block;width:100%;height:100%;overflow:visible}
+.bilen .body{animation:float 3.6s ease-in-out infinite}
+.bilen .eye{transform-box:fill-box;transform-origin:center;animation:blink 5.2s infinite}
+.bilen .pupil{transform-box:fill-box;transform-origin:center}
+.bilen .head{transform-box:view-box;transform-origin:100px 150px;transition:transform .25s ease}
+.bilen .ear{transform-box:view-box;transform-origin:60px 80px;animation:ear 6s ease-in-out infinite}
+.bilen .led{animation:led 1.8s steps(2,end) infinite}
+.bilen .m{display:none}
+.bilen .scanline{opacity:0}
+.bilen[data-mood="idle"] .m-smile,.bilen[data-mood="learn"] .m-smile{display:inline}
+.bilen[data-mood="think"] .m-flat,.bilen[data-mood="analyze"] .m-flat,.bilen[data-mood="draw"] .m-flat{display:inline}
+.bilen[data-mood="lock"] .m-smirk{display:inline}
+.bilen[data-mood="win"] .m-grin{display:inline}
+.bilen[data-mood="lose"] .m-o{display:inline}
+.bilen[data-mood="think"] .pupil,.bilen[data-mood="analyze"] .pupil{animation:look 1s ease-in-out infinite alternate}
+.bilen[data-mood="think"] .scanline,.bilen[data-mood="analyze"] .scanline{animation:scanl 1.1s linear infinite}
+.bilen[data-mood="lock"] .eye{animation:none;transform:scaleY(.8)}
+.bilen[data-mood="lock"] .head{transform:rotate(3deg)}
+.bilen[data-mood="win"] .eye{animation:none;transform:scaleY(.55)}
+.bilen[data-mood="win"] .head{transform:rotate(-4deg)}
+.bilen[data-mood="lose"] .eye{animation:none;transform:scale(1.12)}
+.bilen[data-mood="lose"] .pupil{transform:scale(.55)}
+.bilen[data-mood="lose"] .head{animation:glitch .4s steps(2,end) 2}
+.bilen[data-mood="draw"] .head{transform:rotate(2deg)}
+
+/* ---------- Intro ---------- */
+.intro{align-items:center;text-align:center;justify-content:space-between;overflow-y:auto;gap:10px;color:#fff;background:var(--blue)}
+.community{font-size:14px;font-weight:700;color:#fff;opacity:.9;flex:none}
+.hero,.an .av{position:relative;height:var(--hero-h);width:var(--hero-h);flex:none}
+.hero::before,.an .av::before{content:"";position:absolute;top:0;right:0;bottom:0;left:0;border-radius:50%;background:var(--sun)}
+.hero .bilen,.an .av .bilen{position:absolute;top:0;left:50%;height:100%;width:auto;aspect-ratio:200/232;transform:translateX(-50%)}
+.logo{font:800 var(--logo-fs)/1 var(--display);letter-spacing:-.02em;color:#fff}
+.tag{font-size:15px;font-weight:700;margin-top:8px;text-wrap:balance;max-width:300px}
+.story{font-size:14px;max-width:330px;line-height:1.45;opacity:.92}
+.rules{display:flex;gap:6px;list-style:none;width:100%;justify-content:center;align-items:flex-start}
+.rules li{flex:1;display:flex;flex-direction:column;align-items:center;gap:6px;font-size:12px;font-weight:700;line-height:1.2}
+.rules b{width:28px;height:28px;border-radius:50%;display:grid;place-items:center;background:var(--sun);color:var(--ink);font:800 13px/1 var(--display)}
+.cta-wrap{width:100%;flex:none;display:flex;flex-direction:column;align-items:center;gap:8px}
+.cta{display:flex;align-items:center;justify-content:center;width:100%;min-height:68px;border-radius:999px;
+  font:800 22px/1 var(--display);color:var(--ink);background:var(--sun);box-shadow:0 7px 0 var(--sun-d);
+  transition:transform .08s,box-shadow .08s}
+.cta:active{transform:translateY(5px);box-shadow:0 2px 0 var(--sun-d)}
+.meta{font-size:13px;font-weight:600;opacity:.85}
+.best{font-size:13px;font-weight:800;color:var(--sun)}
+.btn2{display:flex;align-items:center;justify-content:center;width:100%;min-height:60px;border-radius:18px;font-size:17px;font-weight:800;
+  color:var(--blue);background:#fff;border:2px solid var(--blue)}
+.btn2:active{transform:scale(.98)}
+
+/* ---------- Game: blue top = BİLEN, yellow bottom = you ---------- */
+.screen.game{padding:0}
+.screen.game.active{display:flex;flex-direction:column}
+.zb{position:relative;z-index:2;flex:none;background:var(--blue);border-radius:0 0 30px 30px;color:#fff;display:flex;flex-direction:column;gap:8px;
+  padding:10px 16px 16px;
+  padding:calc(env(safe-area-inset-top,0px) + 10px) calc(env(safe-area-inset-right,0px) + 16px) 16px calc(env(safe-area-inset-left,0px) + 16px)}
+.zy{flex:1;min-height:0;margin-top:-30px;background:var(--sun);display:grid;grid-template-rows:minmax(0,1fr) auto auto;row-gap:10px;
+  padding:40px 16px 14px;
+  padding:40px calc(env(safe-area-inset-right,0px) + 16px) calc(env(safe-area-inset-bottom,0px) + 14px) calc(env(safe-area-inset-left,0px) + 16px)}
+.hud{display:flex;align-items:center;gap:8px;height:42px}
+.pill{display:flex;align-items:baseline;gap:5px;padding:0 12px;height:36px;align-items:center;border-radius:12px;background:rgba(255,255,255,.16);
+  font-weight:800;font-variant-numeric:tabular-nums;white-space:nowrap}
+.pill small{font-size:12px;font-weight:600;opacity:.8}
+.pill b{font-family:var(--display);font-size:15px;font-weight:800}
+.pill.score{flex:1;justify-content:center}
+.pill .ic{width:18px;height:18px;opacity:.8}
+.pill.hot{background:var(--sun);color:var(--ink)}
+.pill.hot .ic{opacity:1}
+.mute{position:relative;width:40px;height:40px;border-radius:50%;display:grid;place-items:center;background:rgba(255,255,255,.16);color:#fff}
+.mute::after{content:"";position:absolute;top:-10px;right:-10px;bottom:-10px;left:-10px}
+.mute svg{width:22px;height:22px}
+.prog{display:grid;gap:3px;height:5px}
+.prog i{display:block;border-radius:3px;background:rgba(255,255,255,.25)}
+.prog i.on{background:#fff}
+.prog i.cur{background:var(--sun)}
+
+.panel{display:grid;grid-template-columns:auto 1fr;gap:12px;align-items:center}
+.panel .av{height:var(--av-h);width:calc(var(--av-h)*.862)}
+.say{display:flex;flex-direction:column;gap:6px;min-width:0}
+.bubble{position:relative;background:#fff;color:var(--ink);border-radius:16px;padding:8px 12px;font-weight:800;font-size:14px;line-height:1.2;min-height:42px;display:flex;align-items:center}
+.bubble::before{content:"";position:absolute;left:-7px;top:50%;margin-top:-7px;border:7px solid transparent;border-left:0;border-right-color:#fff}
+.conf-top{display:flex;align-items:center;gap:6px;font-size:12px;font-weight:700;white-space:nowrap;min-width:0}
+.conf-top b{margin-left:auto;font:800 13px var(--display);font-variant-numeric:tabular-nums}
+.chip{display:inline-flex;align-items:center;gap:4px;font-size:12px;font-weight:800;padding:2px 6px;border-radius:8px;background:rgba(255,255,255,.18)}
+.chip .ic{width:12px;height:12px}
+.chip em{font-style:normal}
+.chip.on{background:var(--sun);color:var(--ink)}
+.bar{position:relative;height:12px;border-radius:6px;background:var(--blue-d);overflow:hidden;margin-top:4px}
+.bar i{position:absolute;left:0;top:0;bottom:0;width:100%;transform-origin:left;transform:scaleX(.33);background:var(--sun);transition:transform .5s cubic-bezier(.2,.9,.3,1)}
+.bar .mark{position:absolute;left:33.333%;top:0;bottom:0;width:2px;background:#fff;text-decoration:none}
+.bar.scan::after{content:"";position:absolute;top:0;bottom:0;left:0;width:30%;background:rgba(255,255,255,.55);animation:sweep .9s linear infinite}
+.conf-bot{display:flex;justify-content:space-between;gap:6px;font-size:12px;font-weight:700;margin-top:4px}
+.legend{opacity:.75;font-weight:600;white-space:nowrap}
+.legend u{display:inline-block;width:2px;height:10px;background:#fff;margin-right:6px;vertical-align:-1px;text-decoration:none}
+
+.arena{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;min-height:0}
+.rhythm{font:800 var(--rhythm-fs)/1.2 var(--display);min-height:1.3em;text-align:center;color:var(--ink)}
+.rhythm.pop{animation:pop .3s ease-out}
+.rhythm.res-win{color:var(--win)}
+.rhythm.res-lose{color:var(--lose)}
+.duel{display:flex;align-items:center;justify-content:center;gap:12px}
+.side{display:flex;flex-direction:column;align-items:center;gap:8px}
+.who{font-size:13px;font-weight:800}
+.vs{font:800 13px var(--display);opacity:.55}
+.card{width:var(--card);height:var(--card);border-radius:26px;display:grid;place-items:center;position:relative;background:#fff;box-shadow:0 6px 0 var(--sun-d)}
+.card.wait{background:transparent;box-shadow:none;border:3px dashed rgba(15,27,102,.35)}
+.card .q{font:800 calc(var(--card)*.42)/1 var(--display);color:var(--ink);opacity:.4}
+.card svg.big{width:62%;height:62%}
+.card.think,.card.locked{background:var(--blue);box-shadow:0 6px 0 var(--blue-d);color:#fff}
+.card.think .q{color:#fff;opacity:.85}
+.card.clock{color:var(--ink)}
+.card.think::before{content:"";position:absolute;top:8px;bottom:8px;left:0;width:30%;border-radius:10px;background:rgba(255,255,255,.3);animation:sweep 1s linear infinite}
+.card.show{animation:pop .35s ease-out}
+.card.win{box-shadow:0 0 0 5px var(--win),0 6px 0 5px #075a32}
+.card.lose{box-shadow:0 0 0 5px var(--lose),0 6px 0 5px #96092b}
+.card.win::after,.card.lose::after{position:absolute;right:-12px;top:-12px;width:28px;height:28px;border-radius:50%;display:grid;place-items:center;
+  font-size:15px;font-weight:900;color:#fff;z-index:2}
+.card.win::after{content:"✓";background:var(--win)}
+.card.lose::after{content:"✕";background:var(--lose)}
+.card.beat{animation:bounce .3s ease-out}
+.result{min-height:32px;display:flex;gap:8px;align-items:center;justify-content:center;font-weight:800;font-size:15px}
+.gain{padding:4px 12px;border-radius:10px;background:var(--ink);color:#fff;font:800 14px var(--display)}
+.bonus{padding:4px 10px;border-radius:10px;background:#fff;color:var(--ink);font-size:13px}
+.duel.shake{animation:shake .4s}
+.fx{position:absolute;left:50%;top:50%;width:0;height:0;pointer-events:none;z-index:20}
+.fx i{position:absolute;left:0;top:0;width:8px;height:12px;border-radius:2px;animation:conf .9s ease-out forwards}
+
+.timer{height:10px;border-radius:5px;background:rgba(15,27,102,.18);overflow:hidden}
+.timer i{display:block;height:100%;width:100%;transform-origin:left;transform:scaleX(1);background:var(--ink);will-change:transform}
+.timer.low i{background:var(--lose)}
+.moves{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.move{height:var(--move-h);min-height:72px;border-radius:22px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;
+  background:#fff;box-shadow:0 6px 0 var(--sun-d);font-weight:800;font-size:14px;color:var(--ink);
+  transition:transform .06s,box-shadow .06s,opacity .15s}
+.move svg{width:40px;height:40px}
+.move:active:not(:disabled){transform:translateY(5px);box-shadow:0 1px 0 var(--sun-d)}
+.move:disabled{opacity:.55;cursor:default}
+.move.picked{opacity:1;background:var(--blue);color:#fff;transform:translateY(5px);box-shadow:0 1px 0 var(--sun-d)}
+.move.dim{opacity:.35}
+
+/* ---------- Final ---------- */
+.screen.final{padding:0;overflow-y:auto;-webkit-overflow-scrolling:touch;background:var(--mist)}
+.final.is-analyzing{background:var(--blue);color:#fff}
+.final .an{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;text-align:center}
+.final:not(.is-analyzing) .an{display:none}
+.final.is-analyzing .res{display:none}
+.an-text{font-weight:800}
+.an-bar{width:200px;height:6px;border-radius:3px;background:rgba(255,255,255,.25);overflow:hidden;position:relative}
+.an-bar i{position:absolute;top:0;bottom:0;left:0;width:40%;background:var(--sun);animation:sweep .9s linear infinite}
+.res{display:flex;flex-direction:column;gap:12px;flex:none;padding-bottom:calc(env(safe-area-inset-bottom,0px) + 24px)}
+.res>*:not(.top){margin-left:14px;margin-right:14px}
+.top{display:flex;align-items:center;gap:14px;background:var(--blue);color:#fff;border-radius:0 0 30px 30px;
+  padding:16px 18px 20px;padding-top:calc(env(safe-area-inset-top,0px) + 16px)}
+.top .av{height:84px;width:72px;flex:none}
+.top h2{font:800 20px/1.15 var(--display)}
+.top h2.w{color:var(--sun)}
+.record{font-size:14px;font-weight:600;margin-top:6px;opacity:.9}
+.chips{display:grid;grid-template-columns:1fr 1.3fr;gap:10px}
+.chip2{background:#fff;border-radius:20px;padding:12px 14px;display:flex;flex-direction:column;gap:2px;justify-content:center}
+.chip2 small{font-size:12px;font-weight:700;color:var(--mute)}
+.chip2 b{font:800 24px/1.15 var(--display);font-variant-numeric:tabular-nums}
+.chip2 b#fRank{font-size:15px;line-height:1.25}
+.chip2 em{font-style:normal;font-size:12px;font-weight:800;color:var(--blue)}
+
+.persona{background:var(--sun);border-radius:28px;padding:18px 16px 16px;display:flex;flex-direction:column;gap:12px}
+.persona small{font-size:13px;font-weight:800;opacity:.75}
+.pname{font:800 24px/1.15 var(--display);margin-top:2px;transform-origin:left center}
+.res.go .pname{animation:stamp .55s cubic-bezier(.2,1.4,.4,1)}
+.ptag{font-size:15px;font-weight:800;margin-top:6px}
+.ptext{font-size:14px;line-height:1.5;font-weight:500}
+.meters{background:#fff;border-radius:18px;padding:12px 14px;display:flex;flex-direction:column;gap:12px}
+.mtr-n{display:block;font-size:13px;font-weight:800;margin-bottom:4px}
+.mtr-row{display:flex;align-items:center;gap:8px}
+.mtr-row em{font-style:normal;font-size:12px;font-weight:600;color:var(--mute);width:62px;flex:none}
+.mtr-row em:last-child{text-align:right}
+.mtr-t{position:relative;flex:1;height:18px;margin:0 8px}
+.mtr-t::before{content:"";position:absolute;left:0;right:0;top:50%;height:4px;margin-top:-2px;border-radius:2px;background:var(--mist)}
+.mtr-t i{position:absolute;top:50%;width:18px;height:18px;margin:-9px 0 0 -9px;border-radius:50%;background:var(--blue);border:3px solid #fff;box-shadow:0 0 0 2px var(--blue)}
+.facts{list-style:none;display:flex;flex-direction:column;gap:6px}
+.facts li{font-size:14px;font-weight:700;line-height:1.35}
+.note{font-size:12px;font-weight:600;opacity:.7}
+
+.cardb{background:#fff;border-radius:20px;padding:14px}
+.cardb h3{font-size:15px;font-weight:800;margin-bottom:8px;color:var(--blue)}
+.acc{font-size:14px;font-weight:600;line-height:1.4}
+.acc b{font:800 16px var(--display);color:var(--blue)}
+.chart svg{width:100%;height:auto;margin-top:6px}
+.chart text{font:600 8px system-ui,sans-serif;fill:#5a64a8}
+.legend2{font-size:12px;color:var(--mute);font-weight:600;margin-top:2px;line-height:1.35}
+.cardb ul{list-style:none;display:flex;flex-direction:column;gap:9px}
+.cardb li{font-size:15px;font-weight:700;padding-left:20px;position:relative;line-height:1.35}
+.cardb li::before{content:"";position:absolute;left:2px;top:.5em;width:8px;height:8px;border-radius:2px;background:var(--blue)}
+.cardb li.none::before{background:var(--sun)}
+details.mind summary{font-size:15px;font-weight:800;color:var(--blue);cursor:pointer;min-height:40px;display:flex;align-items:center}
+.mind p{font-size:13px;line-height:1.45;margin-top:6px;font-weight:500}
+.heat{border-collapse:separate;border-spacing:4px;width:100%;text-align:center;font-size:12px;margin-top:8px}
+.heat caption{font-size:12px;color:var(--mute);text-align:left;font-weight:600}
+.heat th{font-weight:700;color:var(--mute);font-size:12px}
+.heat th svg.mi{width:22px;height:22px;margin:0 auto 2px}
+.heat td{border-radius:10px;padding:7px 2px;border:2px solid transparent}
+.heat td b{display:block;font-size:16px}
+.heat td small{font-size:11px;font-weight:600}
+.heat td.top1{border-color:var(--ink)}
+.wrow{display:grid;grid-template-columns:128px 1fr 34px;gap:6px;align-items:center;font-size:12px;font-weight:600;color:var(--mute);margin-top:5px}
+.wrow .tr{height:8px;border-radius:4px;background:var(--mist);overflow:hidden}
+.wrow .tr i{display:block;height:100%;background:var(--blue)}
+.wrow span:last-child{text-align:right;font-variant-numeric:tabular-nums}
+.save label.f{display:block;font-size:13px;font-weight:700;color:var(--mute);margin-top:10px}
+.save input[type=text]{width:100%;height:52px;border-radius:14px;border:2px solid #c9d0f5;background:#fff;padding:0 14px;margin-top:4px;color:var(--ink)}
+.save input[type=text]:focus{border-color:var(--blue);outline:none}
+.check{display:flex;gap:12px;align-items:flex-start;min-height:64px;padding:12px 0 6px;font-size:12px;color:var(--mute);line-height:1.4}
+.check input{width:28px;height:28px;flex:none;accent-color:var(--blue);margin-top:2px}
+.check a{color:var(--blue);text-decoration:underline}
+.err{min-height:18px;font-size:13px;font-weight:700;color:var(--lose)}
+.save .btn2{margin-top:4px;background:var(--blue);color:#fff}
+.thanks{font-size:15px;font-weight:700;color:var(--win);line-height:1.4}
+.cta.join{min-height:68px;font-size:16px;flex-direction:column;gap:5px;background:var(--blue);color:#fff;box-shadow:0 7px 0 var(--blue-d)}
+.cta.join:active{box-shadow:0 2px 0 var(--blue-d)}
+.cta.join .j2{font:600 12px system-ui,sans-serif;opacity:.85}
+.board ol{padding-left:22px;display:flex;flex-direction:column;gap:5px;font-size:14px;font-weight:700}
+
+/* ---------- Overlays, debug ---------- */
+.overlay{position:absolute;top:0;right:0;bottom:0;left:0;z-index:50;background:var(--blue);color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;text-align:center;padding:24px}
+.overlay h2{font:800 22px var(--display)}
+.overlay p{font-weight:600;max-width:280px;opacity:.9}
+.overlay .cta{max-width:260px}
+#rotate{display:none;z-index:60}
+body.rotate #rotate{display:flex}
+#debug{position:absolute;left:6px;right:6px;bottom:calc(var(--move-h) + 40px);z-index:30;pointer-events:none;background:rgba(0,0,0,.75);
+  border-radius:8px;padding:6px 8px;font:10px/1.3 ui-monospace,Menlo,Consolas,monospace;color:#fff;white-space:pre;overflow:hidden}
+
+/* ---------- Animation ---------- */
+@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-4px)}}
+@keyframes blink{0%,90%,100%{transform:scaleY(1)}94%{transform:scaleY(.08)}}
+@keyframes led{0%,100%{opacity:1}50%{opacity:.25}}
+@keyframes look{from{transform:translateX(-4.5px)}to{transform:translateX(4.5px)}}
+@keyframes scanl{0%{transform:translateY(0);opacity:0}15%{opacity:.9}85%{opacity:.9}100%{transform:translateY(100px);opacity:0}}
+@keyframes glitch{0%{transform:translate(0,0) skewX(0)}25%{transform:translate(-3px,1px) skewX(-6deg)}50%{transform:translate(3px,-1px) skewX(5deg)}75%{transform:translate(-2px,0) skewX(-3deg)}100%{transform:translate(0,0) skewX(0)}}
+@keyframes ear{0%,86%,100%{transform:rotate(0)}92%{transform:rotate(-9deg)}}
+@keyframes pop{0%{transform:scale(.4);opacity:0}60%{transform:scale(1.14);opacity:1}100%{transform:scale(1)}}
+@keyframes stamp{0%{transform:scale(1.5) rotate(-4deg);opacity:0}100%{transform:scale(1) rotate(0);opacity:1}}
+@keyframes bounce{0%,100%{transform:translateY(0)}40%{transform:translateY(-12px)}}
+@keyframes shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-7px)}40%{transform:translateX(6px)}60%{transform:translateX(-4px)}80%{transform:translateX(3px)}}
+@keyframes sweep{from{transform:translateX(-100%)}to{transform:translateX(250%)}}
+@keyframes conf{from{transform:translate(0,0) rotate(0);opacity:1}to{transform:translate(var(--x),var(--y)) rotate(var(--r));opacity:0}}
+
+@media (max-height:560px){
+  .zb{gap:6px}
+  .hud{height:38px}
+}
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important;scroll-behavior:auto!important}
+}
+</style>
+</head>
+<body>
+<noscript><p style="padding:24px;text-align:center;color:#fff">Oyunu oynamak için JavaScript gerekli.</p></noscript>
+
+<!-- Shared SVG sprite: gradient, clip path and icons -->
+<svg width="0" height="0" style="position:absolute;overflow:hidden" aria-hidden="true" focusable="false">
+  <defs>
+    <linearGradient id="gFur" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffffff"/><stop offset="1" stop-color="#ece8f6"/></linearGradient>
+    <linearGradient id="gSuit" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffffff"/><stop offset="1" stop-color="#e3e6fa"/></linearGradient>
+    <linearGradient id="gHorn" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#c9cde8"/><stop offset="1" stop-color="#7f87b8"/></linearGradient>
+    <clipPath id="clipHead"><path d="M100 46C136 46 150 74 148 102C146 128 128 152 100 153C72 152 54 128 52 102C50 74 64 46 100 46Z"/></clipPath>
+  </defs>
+  <symbol id="ic-rock" viewBox="0 0 64 64">
+    <path d="M10 40 14 24 26 12 44 14 56 28 54 46 40 56 20 54Z" fill="#c7cdf0" stroke="#0f1b66" stroke-width="3.5" stroke-linejoin="round"/>
+    <path d="M30 28 56 28 54 46 40 56Z" fill="#8f98d6" opacity=".6"/>
+    <path d="M26 12 30 28 14 24M30 28 44 14M30 28 56 28M30 28 40 56" fill="none" stroke="#0f1b66" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round" opacity=".5"/>
+    <path d="M18 31 22 22" stroke="#fff" stroke-width="3" stroke-linecap="round" opacity=".9"/>
+  </symbol>
+  <symbol id="ic-paper" viewBox="0 0 64 64">
+    <path d="M14 6H40L52 18V58H14Z" fill="#fff" stroke="#0f1b66" stroke-width="3.5" stroke-linejoin="round"/>
+    <path d="M40 6V18H52" fill="#c7cdf0" stroke="#0f1b66" stroke-width="3.5" stroke-linejoin="round"/>
+    <path d="M21 30H45M21 38H45M21 46H35" stroke="#2340e0" stroke-width="3.5" stroke-linecap="round"/>
+  </symbol>
+  <symbol id="ic-scissors" viewBox="0 0 64 64">
+    <g fill="none" stroke-linecap="round">
+      <path d="M20 6 42 40" stroke="#0f1b66" stroke-width="11"/><path d="M44 6 22 40" stroke="#0f1b66" stroke-width="11"/>
+      <path d="M20 6 42 40" stroke="#e4e7fb" stroke-width="6"/><path d="M44 6 22 40" stroke="#e4e7fb" stroke-width="6"/>
+      <circle cx="46" cy="51" r="7" stroke="#0f1b66" stroke-width="9"/><circle cx="18" cy="51" r="7" stroke="#0f1b66" stroke-width="9"/>
+      <circle cx="46" cy="51" r="7" stroke="#ffd23f" stroke-width="4.5"/><circle cx="18" cy="51" r="7" stroke="#ffd23f" stroke-width="4.5"/>
+    </g>
+    <circle cx="32" cy="25.4" r="3.4" fill="#0f1b66"/><circle cx="32" cy="25.4" r="1.4" fill="#ffd23f"/>
+  </symbol>
+  <symbol id="ic-lock" viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="10" rx="2.5" fill="currentColor"/><path d="M8 11V8a4 4 0 0 1 8 0v3" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></symbol>
+  <symbol id="ic-sound" viewBox="0 0 24 24"><path d="M4 9v6h4l5 4V5L8 9H4z" fill="currentColor"/><path d="M16 9a4 4 0 0 1 0 6M18.5 6.5a8 8 0 0 1 0 11" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></symbol>
+  <symbol id="ic-mute" viewBox="0 0 24 24"><path d="M4 9v6h4l5 4V5L8 9H4z" fill="currentColor"/><path d="M16.5 9.5l5 5M21.5 9.5l-5 5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></symbol>
+  <symbol id="ic-flame" viewBox="0 0 24 24"><path d="M12 2c1 4 5 5.5 5 11a5 5 0 0 1-10 0c0-2 1-3 2-4 .3 1.6 1.2 2.4 2 2.5C10.5 8 11 5 12 2z" fill="currentColor"/></symbol>
+  <symbol id="ic-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2.2"/><path d="M12 7v5.5l3.5 2" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+</svg>
+
+<div id="app">
+
+  <!-- ===== Intro ===== -->
+  <section id="screen-intro" class="screen intro active" aria-label="BİLEN açılış">
+    <div class="community" id="introCommunity"></div>
+    <div class="hero" id="heroIntro"></div>
+    <div>
+      <h1 class="logo">BİLEN</h1>
+      <p class="tag">Seni öğrenen yapay zekâya karşı Taş‑Kağıt‑Makas</p>
+    </div>
+    <p class="story">BİLEN, üniversitenin bilgisayar laboratuvarında doğdu. Tek merakı var: insanlar bir sonraki hamlelerini nasıl seçer? İlk denek sensin.</p>
+    <ol class="rules" aria-label="Nasıl oynanır">
+      <li><b>1</b><span>Hamleni seç</span></li>
+      <li><b>2</b><span>BİLEN seni tahmin etmeye çalışır</span></li>
+      <li><b>3</b><span>Puan topla</span></li>
+      <li><b>4</b><span>Kişilik analizini gör</span></li>
+    </ol>
+    <div class="cta-wrap">
+      <button id="btnStart" class="cta" type="button" aria-label="Oyunu başlat">Başla</button>
+      <p class="meta" id="introMeta"></p>
+      <p class="best" id="bestLine" hidden></p>
+    </div>
+  </section>
+
+  <!-- ===== Game ===== -->
+  <section id="screen-game" class="screen game" aria-label="Oyun">
+    <div class="zb">
+      <header class="hud">
+        <div class="pill"><small>Tur</small><b id="hudRound">1</b><small id="hudRounds">/20</small></div>
+        <div class="pill score"><small>Skor</small><b id="hudScore">0</b></div>
+        <div class="pill" id="hudStreakPill" aria-label="Galibiyet serisi"><svg class="ic" aria-hidden="true"><use href="#ic-flame"/></svg><b id="hudStreak">0</b></div>
+        <button id="btnMute" class="mute" type="button" aria-label="Sesi kapat" aria-pressed="false"><svg aria-hidden="true"><use id="muteUse" href="#ic-sound"/></svg></button>
+      </header>
+      <div class="prog" id="prog" aria-hidden="true"></div>
+      <div class="panel">
+        <div class="av" id="heroGame"></div>
+        <div class="say">
+          <div class="bubble" id="bubble" aria-live="polite"></div>
+          <div class="conf">
+            <div class="conf-top"><span>Güven</span><span class="chip" id="chip"><svg class="ic" aria-hidden="true"><use href="#ic-lock"/></svg><em id="chipText">Düşünüyor…</em></span><b id="confPct">%33</b></div>
+            <div class="bar" id="bar" role="progressbar" aria-label="Tahmin güveni" aria-valuemin="0" aria-valuemax="100" aria-valuenow="33"><i id="confFill"></i><u class="mark"></u></div>
+            <div class="conf-bot"><span id="confLabel">Seni tanımaya çalışıyor</span><span class="legend"><u></u>rastgele %33</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="zy">
+      <div class="arena" id="arena">
+        <div class="rhythm" id="rhythm" aria-live="polite"></div>
+        <div class="duel" id="duel">
+          <div class="side"><div class="who">Sen</div><div class="card" id="cardP"></div></div>
+          <div class="vs" aria-hidden="true">VS</div>
+          <div class="side"><div class="who">BİLEN</div><div class="card" id="cardB"></div></div>
+        </div>
+        <div class="result" id="result" aria-live="polite"></div>
+        <div class="fx" id="fx" aria-hidden="true"></div>
+      </div>
+      <div class="timer" id="timer" role="presentation"><i id="timerFill"></i></div>
+      <div class="moves" id="moves">
+        <button class="move" type="button" data-move="0" aria-label="Taş" disabled><svg aria-hidden="true"><use href="#ic-rock"/></svg><span>Taş</span></button>
+        <button class="move" type="button" data-move="1" aria-label="Kağıt" disabled><svg aria-hidden="true"><use href="#ic-paper"/></svg><span>Kağıt</span></button>
+        <button class="move" type="button" data-move="2" aria-label="Makas" disabled><svg aria-hidden="true"><use href="#ic-scissors"/></svg><span>Makas</span></button>
+      </div>
+    </div>
+    <pre id="debug" hidden></pre>
+  </section>
+
+  <!-- ===== Final ===== -->
+  <section id="screen-final" class="screen final is-analyzing" aria-label="Sonuç">
+    <div class="an" id="an">
+      <div class="av" id="heroAnalyze"></div>
+      <p class="an-text">BİLEN seni analiz ediyor…</p>
+      <div class="an-bar"><i></i></div>
+    </div>
+    <div class="res" id="res">
+      <div class="top">
+        <div class="av" id="heroFinal"></div>
+        <div>
+          <h2 id="fTitle"></h2>
+          <p class="record" id="fRecord"></p>
+        </div>
+      </div>
+      <div class="chips">
+        <div class="chip2"><small>Skor</small><b id="fScore">0</b><em id="fBest"></em></div>
+        <div class="chip2"><small>Rütbe</small><b id="fRank"></b></div>
+      </div>
+
+      <div class="persona" aria-label="Kişilik analizi">
+        <div>
+          <small>Hamlelerine göre kişilik tipin</small>
+          <h3 class="pname" id="pType"></h3>
+          <p class="ptag" id="pTag"></p>
+        </div>
+        <p class="ptext" id="pText"></p>
+        <div class="meters" id="pMeters"></div>
+        <ul class="facts" id="pFacts"></ul>
+        <p class="note" id="pNote">Eğlence amaçlı. Bilimsel bir test değil, sadece bu oyundaki hamlelerinden çıkarılan bir tahmin.</p>
+      </div>
+
+      <div class="cardb">
+        <p class="acc" id="fAcc"></p>
+        <div class="chart" id="fChart"></div>
+        <p class="legend2">Dolu nokta: doğru tahmin. Boş nokta: ıska. Çarpı: süre doldu. Kesikli çizgi: rastgele oynayan birinin seviyesi (%33).</p>
+      </div>
+      <div class="cardb">
+        <h3>BİLEN’in senin hakkında öğrendikleri</h3>
+        <ul id="fInsights"></ul>
+      </div>
+      <details class="cardb mind">
+        <summary>BİLEN’in zihnine bak</summary>
+        <div id="fHeat"></div>
+        <p>BİLEN, geçmiş hamlelerinden olasılık tabloları çıkaran küçük bir makine öğrenmesi modeli. Yeni turda tablolara bakıp senin sonraki hamleni tahmin eder ve onu yenen hamleyi oynar.</p>
+        <p>Eski hamleleri yavaş yavaş unuttuğu için stratejini değiştirirsen uyum sağlar. <span id="fTop"></span></p>
+        <div id="fWeights"></div>
+      </details>
+      <div class="cardb save" id="saveBox">
+        <h3>Skorunu kaydet <small style="color:var(--mute);font-weight:600">(isteğe bağlı)</small></h3>
+        <form id="saveForm" novalidate>
+          <label class="f" for="fNick">Takma ad</label>
+          <input id="fNick" type="text" maxlength="16" autocomplete="off" autocapitalize="off" spellcheck="false" aria-required="true">
+          <label class="f" for="fContact">İletişim (e-posta veya Instagram, isteğe bağlı)</label>
+          <input id="fContact" type="text" maxlength="60" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="ornek@mail.com veya @kullanici">
+          <label class="check"><input id="fConsent" type="checkbox"><span><span id="privText"></span> <a id="privLink" target="_blank" rel="noopener" hidden>Aydınlatma metni</a></span></label>
+          <p class="err" id="fErr" role="alert"></p>
+          <button class="btn2" id="btnSave" type="submit" aria-label="Skoru kaydet">Kaydet</button>
+        </form>
+        <p class="thanks" id="saveDone" hidden></p>
+      </div>
+      <a id="btnJoin" class="cta join" target="_blank" rel="noopener" hidden><span class="j1">Topluluğumuza katıl</span><span class="j2" id="joinName"></span></a>
+      <div class="cardb board" id="board" hidden>
+        <h3>Liderlik tablosu</h3>
+        <ol id="boardList"></ol>
+      </div>
+      <button class="btn2" id="btnReplay" type="button" aria-label="Tekrar oyna">Tekrar oyna</button>
+    </div>
+  </section>
+
+  <div id="pause" class="overlay" hidden role="dialog" aria-label="Oyun duraklatıldı">
+    <h2>Duraklatıldı</h2>
+    <p>Hazır olunca devam et. Süre senin için durdu.</p>
+    <button class="cta" id="btnResume" type="button" aria-label="Oyuna devam et">Devam</button>
+  </div>
+  <div id="rotate" class="overlay" role="alert">
+    <h2>Telefonu dikey tut</h2>
+    <p>BİLEN dikey ekranda, tek elle oynanıyor. Oyun şimdilik duruyor.</p>
+  </div>
+</div>
+
+
+<template id="tplBilen">
+<svg class="bilen" viewBox="0 0 200 232" role="img" aria-label="BİLEN, yapay zekâ keçi robotu" data-mood="idle" focusable="false">
+  <g class="body">
+    <!-- torso -->
+    <path d="M38 232V204C38 184 58 174 80 172H120C142 174 162 184 162 204V232Z" fill="url(#gSuit)" stroke="#c4cbe0" stroke-width="1.5"/>
+    <rect x="68" y="190" width="64" height="26" rx="6" fill="#0f1b66"/>
+    <text class="badge-text" x="100" y="208.5" text-anchor="middle" font-size="15" font-weight="800" fill="#ffffff" letter-spacing="1.5" font-family="system-ui,-apple-system,'Segoe UI',Roboto,Arial,sans-serif"></text>
+    <rect class="led" x="80" y="221" width="40" height="3" rx="1.5" fill="#ffd23f"/>
+    <circle cx="46" cy="206" r="12" fill="#1429a3"/><circle cx="46" cy="206" r="7" fill="none" stroke="#ffd23f" stroke-width="2"/>
+    <circle cx="154" cy="206" r="12" fill="#1429a3"/><circle cx="154" cy="206" r="7" fill="none" stroke="#ffd23f" stroke-width="2"/>
+    <!-- neck -->
+    <rect x="86" y="146" width="28" height="30" rx="7" fill="#1429a3"/>
+    <path d="M86 156H114M86 165H114" stroke="#ffd23f" stroke-opacity=".7" stroke-width="1.5"/>
+    <ellipse cx="100" cy="174" rx="26" ry="7" fill="#0f1b66"/>
+    <g class="head">
+      <!-- horns -->
+      <g fill="none">
+        <path d="M72 52C54 48 42 32 48 12" stroke="url(#gHorn)" stroke-width="10" stroke-linecap="round"/>
+        <path d="M72 52C54 48 42 32 48 12" stroke="#4a5073" stroke-width="10" stroke-dasharray="1.5 7" opacity=".5"/>
+      </g>
+      <g fill="none" transform="matrix(-1 0 0 1 200 0)">
+        <path d="M72 52C54 48 42 32 48 12" stroke="url(#gHorn)" stroke-width="10" stroke-linecap="round"/>
+        <path d="M72 52C54 48 42 32 48 12" stroke="#4a5073" stroke-width="10" stroke-dasharray="1.5 7" opacity=".5"/>
+      </g>
+      <!-- ears -->
+      <g class="ear"><path d="M57 86C42 72 22 78 8 62C30 52 54 60 63 76Z" fill="url(#gFur)" stroke="#cfcbe0" stroke-width="1.5" stroke-linejoin="round"/><path d="M53 82C42 73 28 74 18 66C34 62 48 66 56 76Z" fill="#ff9fbd" opacity=".85"/></g>
+      <g transform="matrix(-1 0 0 1 200 0)"><g class="ear"><path d="M57 86C42 72 22 78 8 62C30 52 54 60 63 76Z" fill="url(#gFur)" stroke="#cfcbe0" stroke-width="1.5" stroke-linejoin="round"/><path d="M53 82C42 73 28 74 18 66C34 62 48 66 56 76Z" fill="#ff9fbd" opacity=".85"/></g></g>
+      <!-- beard + face -->
+      <path d="M92 148Q100 180 108 148Z" fill="url(#gFur)" stroke="#cfcbe0" stroke-width="1.3" stroke-linejoin="round"/>
+      <path d="M100 46C136 46 150 74 148 102C146 128 128 152 100 153C72 152 54 128 52 102C50 74 64 46 100 46Z" fill="url(#gFur)" stroke="#cfcbe0" stroke-width="1.5"/>
+      <path d="M93 62H107M97 68H103" stroke="#2340e0" stroke-width="2" stroke-linecap="round" fill="none"/>
+      <circle cx="100" cy="55" r="2.6" fill="#2340e0"/>
+      <ellipse cx="64" cy="120" rx="8" ry="5" fill="#ff9fbd" opacity=".55"/><ellipse cx="136" cy="120" rx="8" ry="5" fill="#ff9fbd" opacity=".55"/>
+      <!-- eyes -->
+      <g transform="translate(77 98)"><g class="eye"><circle r="16.5" fill="#0f1b66"/><circle r="13.5" fill="#2340e0"/><circle r="13.5" fill="none" stroke="#ffd23f" stroke-width="3"/><g class="pupil"><circle r="7.5" fill="#0a1245"/><circle cx="-3" cy="-3.5" r="2.7" fill="#fff"/><circle cx="3.2" cy="3.4" r="1.2" fill="#fff"/></g></g></g>
+      <g transform="translate(123 98)"><g class="eye"><circle r="16.5" fill="#0f1b66"/><circle r="13.5" fill="#2340e0"/><circle r="13.5" fill="none" stroke="#ffd23f" stroke-width="3"/><g class="pupil"><circle r="7.5" fill="#0a1245"/><circle cx="-3" cy="-3.5" r="2.7" fill="#fff"/><circle cx="3.2" cy="3.4" r="1.2" fill="#fff"/></g></g></g>
+      <!-- nose + mouths -->
+      <path d="M93 119C93 114 107 114 107 119C107 125 102 128 100 128C98 128 93 125 93 119Z" fill="#0f1b66"/>
+      <ellipse cx="97.5" cy="117.5" rx="2" ry="1" fill="#fff" opacity=".6"/>
+      <g fill="none" stroke="#0f1b66" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round">
+        <path class="m m-smile" d="M88 133Q100 145 112 133"/>
+        <path class="m m-smirk" d="M89 136Q101 142 113 130"/>
+        <path class="m m-flat" d="M91 137H109"/>
+        <path class="m m-grin" d="M87 132Q100 150 113 132Z" fill="#0f1b66"/>
+        <ellipse class="m m-o" cx="100" cy="139" rx="5" ry="6.5" fill="#0f1b66"/>
+      </g>
+      <g clip-path="url(#clipHead)"><rect class="scanline" x="40" y="40" width="120" height="3" fill="#ffd23f"/></g>
+    </g>
+  </g>
+</svg>
+</template>
+
+<script>
+(function () {
+'use strict';
+
+/* ===== 1. CONFIG ===== */
+const CONFIG = {
+  // ---- Placeholders: fill these in before publishing ----
+  COMMUNITY_NAME: 'Bilgisayar Mühendisliği Topluluğu',
+  BADGE_TEXT: 'MAKÜ',        // text on BİLEN's chest panel (empty string = blank panel)
+  JOIN_URL: '',              // membership link; empty = the join button stays hidden
+  PRIVACY_URL: '',           // KVKK notice link; empty = the link stays hidden
+  PRIVACY_TEXT: 'Kişisel verilerimin skor kaydı ve topluluk iletişimi amacıyla işlenmesine ilişkin KVKK aydınlatma metnini okudum, onaylıyorum.',
+  BACKEND_ENABLED: false,    // true once a backend exists: shows the leaderboard and POSTs scores
+  BACKEND_URL: '',           // e.g. 'https://example.org/api/bilen' (POST = save score, GET ?top=10 = leaderboard)
+
+  // ---- Game ----
+  ROUNDS: 10,
+  WARMUP_ROUNDS: 3,          // BİLEN plays randomly while it collects first data
+  EXPLORE_RATE: 0.10,        // after warm-up BİLEN still plays randomly this often (anti-exploit)
+  MILESTONES: [5, 10, 15],   // rounds that get a progress comment from BİLEN
+  RANDOM_LEVEL: 1 / 3,       
+
+  // ---- Timing (ms) ----
+  CHOOSE_MS: 5000,           // player's time to pick (starts after BİLEN locks its move)
+  THINK_MS: 900,             // BİLEN "thinking" before it locks its move
+  BEAT_MS: 320,              // one beat of "Taş… Kağıt… Makas!"
+  RESULT_MS: 1500,           // how long the result stays before the next round starts
+  TIMEOUT_REVEAL_MS: 600,    // pause before the reveal when time runs out
+  ANALYZE_MS: 1500,          // BİLEN's "analysing" scan on the final screen
+
+  // ---- Scoring ----
+  SCORE: { WIN: 100, DRAW: 30, LOSS: 0, STREAK_FROM: 3, STREAK_BONUS: 25 },
+
+  // ---- Learning model ----
+  // DECAY: counters are multiplied by this every round (forgetting). ALPHA: Laplace smoothing.
+  // ETA: sharpness of the multiplicative expert-weight update. WEIGHT_FLOOR: min weight per expert.
+  MODEL: { DECAY: 0.9, ALPHA: 1, ETA: 2, WEIGHT_FLOOR: 0.04 },
+
+  // ---- Labels and thresholds (fractions) ----
+  CONF_LABELS: [
+    { max: 0.40, text: 'Seni tanımaya çalışıyor' },
+    { max: 0.55, text: 'Bir kalıp sezdi' },
+    { max: 0.70, text: 'Seni çözüyor' },
+    { max: 1.01, text: 'Seni okuyor!' }
+  ],
+  RANKS: [
+    { max: 0.30, name: 'Kaos Ustası' },
+    { max: 0.40, name: 'Zor Vaka' },
+    { max: 0.55, name: 'Açık Kitap' },
+    { max: 1.01, name: 'Alışkanlıklarının Kölesi' }
+  ],
+  RANK_NONE: 'Hayalet',      // used when BİLEN never got a scored prediction (no moves played)
+  INSIGHT: {
+    MIN_OBS: 4,              // min observations in a context (stricter than 3 to cut noise)
+    MIN_SHARE: 0.55,         // min share of the leading outcome
+    MAX_P: 0.04,             // max binomial tail probability vs. random play (filters coincidences)
+    MAX_LINES: 3
+  },
+  // Personality analysis. All values are tunable without touching the logic.
+  PERSONA: {
+    MIN_MOVES: 6,            // fewer played moves than this = "Gizemli Denek", no scores
+    ACC_FULL: 0.60,          // BİLEN accuracy that counts as "fully predictable" (random = 0.33)
+    FAST_MS: 500,            // median decision time that counts as full reflex
+    SLOW_MS: 2500,           // median decision time that counts as full deliberation
+    DOMINANT: 0.60           // one move played at least this often decides between Atılgan (taş/makas) and Temkinli (kağıt)
+  },
+  NAME_LEN: [2, 16]          // nickname length limits
+};
+
+/* ===== 2. MODEL ===== */
+const MOVES = [
+  { name: 'Taş',   lower: 'taş',   abl: 'Taştan' },
+  { name: 'Kağıt', lower: 'kağıt', abl: 'Kağıttan' },
+  { name: 'Makas', lower: 'makas', abl: 'Makastan' }
+];
+
+// 0 = Rock, 1 = Paper, 2 = Scissors. counter(x) is the move that beats x.
+function counter(x) { return (x + 1) % 3; }
+// Result from the player's point of view: 0 = player wins, 1 = player loses, 2 = draw.
+function outcome(player, bilen) { return player === bilen ? 2 : (bilen === counter(player) ? 1 : 0); }
+function last(a, k) { return a[a.length - (k || 1)]; }
+
+// Each expert turns the history into a distribution over the player's NEXT move.
+//  nCtx : number of contexts (rows of counters, each row has 3 cells)
+//  ctx  : picks the context from the history, -1 when there is not enough history yet
+//  rel  : cells count the move RELATIVE to base(history): (next - base) mod 3
+//         0 = same move, 1 = the move that beats base, 2 = the move that base beats
+const EXPERT_DEFS = [
+  { id: 'freq',  label: 'Genel sıklık',            nCtx: 1, rel: false,
+    ctx: function () { return 0; } },
+  { id: 'm1',    label: 'Önceki hamle',            nCtx: 3, rel: false,
+    ctx: function (h) { return h.pm.length >= 1 ? last(h.pm) : -1; } },
+  { id: 'm2',    label: 'Son iki hamle',           nCtx: 9, rel: false,
+    ctx: function (h) { return h.pm.length >= 2 ? last(h.pm, 2) * 3 + last(h.pm) : -1; } },
+  { id: 'wl',    label: 'Kazan-kal / kaybet-değiştir', nCtx: 3, rel: true,
+    ctx: function (h) { return h.res.length ? last(h.res) : -1; },
+    base: function (h) { return last(h.pm); } },
+  { id: 'reply', label: 'BİLEN’e tepki',          nCtx: 1, rel: true,
+    ctx: function (h) { return h.bm.length ? 0 : -1; },
+    base: function (h) { return last(h.bm); } },
+  { id: 'step',  label: 'Hamle adımı',             nCtx: 1, rel: true,
+    ctx: function (h) { return h.pm.length ? 0 : -1; },
+    base: function (h) { return last(h.pm); } }
+];
+
+function createModel() {
+  const MC = CONFIG.MODEL;
+  const experts = EXPERT_DEFS.map(function (def) {
+    const counts = [];
+    for (let i = 0; i < def.nCtx; i++) counts.push([0, 0, 0]);
+    return { def: def, w: 1 / EXPERT_DEFS.length, counts: counts };
+  });
+  const hist = { pm: [], bm: [], res: [] };   // player moves, BİLEN moves, results (player view)
+  let pending = null;
+
+  function view(e) {
+    const ctx = e.def.ctx(hist);
+    if (ctx < 0) return { ctx: -1, base: 0, dist: [1 / 3, 1 / 3, 1 / 3] };
+    const row = e.counts[ctx];
+    const tot = row[0] + row[1] + row[2] + 3 * MC.ALPHA;
+    const dist = [0, 0, 0];
+    let base = 0;
+    if (e.def.rel) {
+      base = e.def.base(hist);
+      for (let d = 0; d < 3; d++) dist[(base + d) % 3] = (row[d] + MC.ALPHA) / tot;
+    } else {
+      for (let m = 0; m < 3; m++) dist[m] = (row[m] + MC.ALPHA) / tot;
+    }
+    return { ctx: ctx, base: base, dist: dist };
+  }
+
+  // Predicts the player's next move from PAST rounds only.
+  function predict() {
+    const views = experts.map(view);
+    const dist = [0, 0, 0];
+    experts.forEach(function (e, i) {
+      for (let m = 0; m < 3; m++) dist[m] += e.w * views[i].dist[m];
+    });
+    const top = Math.max(dist[0], dist[1], dist[2]);
+    const ties = [0, 1, 2].filter(function (m) { return dist[m] >= top - 1e-9; });
+    const P = ties[Math.floor(Math.random() * ties.length)];   // random tie-break: no fixed bias to exploit
+    pending = { views: views, dist: dist, P: P, conf: dist[P] };
+    return pending;
+  }
+
+  // Called after the round: updates expert weights, forgets a little, counts the new observation.
+  function learn(move, bilenMove, res) {
+    const pv = pending || predict();
+    pending = null;
+    let sum = 0;
+    experts.forEach(function (e, i) {
+      e.w *= Math.pow(Math.max(pv.views[i].dist[move], 1e-3), MC.ETA);
+      sum += e.w;
+    });
+    experts.forEach(function (e) { e.w = Math.max(e.w / sum, MC.WEIGHT_FLOOR); });
+    sum = experts.reduce(function (s, e) { return s + e.w; }, 0);
+    experts.forEach(function (e) { e.w /= sum; });
+    experts.forEach(function (e, i) {
+      e.counts.forEach(function (row) { row[0] *= MC.DECAY; row[1] *= MC.DECAY; row[2] *= MC.DECAY; });
+      const v = pv.views[i];
+      if (v.ctx >= 0) e.counts[v.ctx][e.def.rel ? (move - v.base + 3) % 3 : move] += 1;
+    });
+    hist.pm.push(move); hist.bm.push(bilenMove); hist.res.push(res);
+  }
+
+  function weights() {
+    return experts.map(function (e) { return { id: e.def.id, label: e.def.label, w: e.w }; });
+  }
+  return { predict: predict, learn: learn, weights: weights, hist: hist };
+}
+
+// Raw (undecayed) observation counts per expert/context, rebuilt from the history.
+// The final screen explanations and the heat map are generated from these.
+function rawTables(h) {
+  const raw = {};
+  EXPERT_DEFS.forEach(function (def) {
+    raw[def.id] = [];
+    for (let i = 0; i < def.nCtx; i++) raw[def.id].push([0, 0, 0]);
+  });
+  for (let i = 0; i < h.pm.length; i++) {
+    const pre = { pm: h.pm.slice(0, i), bm: h.bm.slice(0, i), res: h.res.slice(0, i) };
+    EXPERT_DEFS.forEach(function (def) {
+      const c = def.ctx(pre);
+      if (c < 0) return;
+      const idx = def.rel ? (h.pm[i] - def.base(pre) + 3) % 3 : h.pm[i];
+      raw[def.id][c][idx] += 1;
+    });
+  }
+  return raw;
+}
+
+function choose(n, k) { let r = 1; for (let i = 1; i <= k; i++) r = r * (n - k + i) / i; return r; }
+// P(X >= k) for X ~ Binomial(n, p)
+function binomTail(n, k, p) {
+  let s = 0;
+  for (let i = k; i <= n; i++) s += choose(n, i) * Math.pow(p, i) * Math.pow(1 - p, n - i);
+  return s;
+}
+
+function describeInsight(c) {
+  const p = Math.round(c.share * 100), m = c.set[0];
+  switch (c.def.id) {
+    case 'freq':
+      return 'En sevdiğin hamle: ' + MOVES[m].lower + ' (%' + p + ').';
+    case 'm1':
+      return MOVES[c.ctx].abl + ' sonra %' + p + ' ' + (m === c.ctx ? 'yine ' : '') + MOVES[m].lower + ' oynuyorsun.';
+    case 'm2':
+      return MOVES[Math.floor(c.ctx / 3)].name + ' → ' + MOVES[c.ctx % 3].name + ' ikilisinden sonra %' + p + ' ' + MOVES[m].lower + ' oynuyorsun.';
+    case 'wl': {
+      const pre = ['Kazandıktan sonra', 'Kaybettikten sonra', 'Berabere kaldıktan sonra'][c.ctx];
+      const what = c.set.length === 2 ? 'hamleni değiştiriyorsun'
+        : ['aynı hamleyi tekrarlıyorsun', 'önceki hamleni yenen hamleye geçiyorsun', 'önceki hamlenin yendiği hamleye geçiyorsun'][m];
+      return pre + ' %' + p + ' ihtimalle ' + what + '.';
+    }
+    case 'reply':
+      if (c.set.length === 2) return 'BİLEN’in son hamlesini taklit etmiyorsun (%' + p + ').';
+      return ['BİLEN’in son hamlesini kopyalıyorsun', 'BİLEN’in son hamlesini yenen hamleyi oynuyorsun', 'BİLEN’in son hamlesinin yendiği hamleyi oynuyorsun'][m] + ' (%' + p + ').';
+    default:
+      if (c.set.length === 2) return 'Hamleni neredeyse hiç tekrarlamıyorsun (%' + p + ').';
+      return ['Hamleni sık sık tekrarlıyorsun', 'Hamleni sırayla değiştiriyorsun: Taş → Kağıt → Makas', 'Hamleni ters sırayla değiştiriyorsun: Makas → Kağıt → Taş'][m] + ' (%' + p + ').';
+  }
+}
+
+// Picks the strongest statistically meaningful patterns (at most one per expert / context row).
+function buildInsights(h) {
+  const IC = CONFIG.INSIGHT;
+  const raw = rawTables(h);
+  const found = [];
+  EXPERT_DEFS.forEach(function (def) {
+    let best = null;
+    raw[def.id].forEach(function (row, ctx) {
+      const n = row[0] + row[1] + row[2];
+      if (n < IC.MIN_OBS) return;
+      const options = def.rel ? [[0], [1], [2], [1, 2]] : [[0], [1], [2]];
+      options.forEach(function (set) {
+        const k = set.reduce(function (s, d) { return s + row[d]; }, 0);
+        const share = k / n;
+        if (share < IC.MIN_SHARE) return;
+        const p = binomTail(n, k, set.length / 3);
+        if (p > IC.MAX_P) return;
+        const score = -Math.log(p);
+        if (!best || score > best.score) best = { def: def, ctx: ctx, set: set, share: share, score: score };
+      });
+    });
+    if (best) found.push(best);
+  });
+  found.sort(function (a, b) { return b.score - a.score; });
+  return found.slice(0, IC.MAX_LINES).map(describeInsight);
+}
+
+/* ===== 2b. PERSONALITY ===== */
+// Four measurable traits (all 0..1) are computed from the player's own history:
+//   P  predictability : how often BİLEN guessed right (entropy of the move mix when there is too little data)
+//   S  speed          : median decision time (a timeout counts as the full time limit)
+//   F  flexibility    : how often the player changes the move right after a loss (1 = always, 0 = never)
+//   R  boldness       : share of rock + scissors (paper = the "safe" move). Playful folklore, not science.
+// The type is the best fit among the weighted profiles below.
+const PERSONAS = {
+  strateji: { name: 'Soğukkanlı Stratejist', tag: 'Her hamlenin bir gerekçesi var.',
+    text: 'Kaybettiğinde hemen yön değiştiriyor, kalıp bırakmıyorsun. Karar vermen biraz zaman alsa da BİLEN’i en çok zorlayan şey tam olarak bu.' },
+  refleks: { name: 'Refleks Avcısı', tag: 'İlk aklına geleni oynarsın.',
+    text: 'Düşünmek için durmuyorsun, hamle elinden çıkıp gidiyor. Hız sana avantaj sağlıyor ama hızlı oynayan herkes farkında olmadan alışkanlık edinir.' },
+  ritual: { name: 'Ritüel Ustası', tag: 'Kendi ritmin var.',
+    text: 'Hamlelerinde bir düzen var ve ona sadık kalıyorsun. Bu rahat bir oyun tarzı ama BİLEN’in işini de bir o kadar kolaylaştırıyor.' },
+  atilgan: { name: 'Cesur Atılgan', tag: 'Önce vur, sonra düşün.',
+    text: 'Taş ve makasla oynamayı seviyor, kağıda pek yanaşmıyorsun. Risk almaktan çekinmiyorsun, tereddüt etmiyorsun.' },
+  temkinli: { name: 'Temkinli Mimar', tag: 'Acele yok, güvenli yoldan gidersin.',
+    text: 'Kağıt senin güvenli limanın. Önce karşındakini izliyor, riski sona bırakıyorsun. Sabırlı oyuncular genelde uzun vadede kazanır.' },
+  kaos: { name: 'Kaos Ajanı', tag: 'Kendin bile bilmiyorsun.',
+    text: 'Bir sonraki hamleni sen de bilmiyor gibisin. BİLEN’in en çok zorlandığı şey tam olarak bu: düzensizlik.' },
+  inatci: { name: 'İnatçı Dahi', tag: 'Vazgeçmek yok.',
+    text: 'Kaybettikten sonra bile hamlenden dönmüyorsun. İnat da bir strateji; bazen tutar, bazen BİLEN’e puan yazar.' },
+  gizem: { name: 'Gizemli Denek', tag: 'Seni tanımak için çok erken.',
+    text: 'Analiz için yeterince hamle göremedim. Bir oyun daha oynarsan seni çözmeye çalışırım.' }
+};
+
+function median(a) {
+  const s = a.slice().sort(function (x, y) { return x - y; });
+  const m = Math.floor(s.length / 2);
+  return s.length % 2 ? s[m] : (s[m - 1] + s[m]) / 2;
+}
+
+// rec: per-round records of the game, h: model history (played rounds only).
+function buildPersona(rec, h) {
+  const PC = CONFIG.PERSONA;
+  const played = rec.filter(function (r) { return !r.timeout; });
+  const n = played.length;
+  if (n < PC.MIN_MOVES) return { id: 'gizem', p: PERSONAS.gizem, meters: [], facts: [] };
+  const clamp = function (x) { return Math.max(0, Math.min(1, x)); };
+  const cnt = [0, 0, 0];
+  played.forEach(function (r) { cnt[r.actual]++; });
+
+  // P: predictability
+  const ev = played.filter(function (r) { return !r.warm; });
+  let P;
+  if (ev.length >= 3) {
+    const acc = ev.filter(function (r) { return r.hit; }).length / ev.length;
+    P = clamp((acc - CONFIG.RANDOM_LEVEL) / (PC.ACC_FULL - CONFIG.RANDOM_LEVEL));
+  } else {
+    let H = 0;
+    cnt.forEach(function (c) { if (c) { const q = c / n; H -= q * Math.log(q) / Math.log(3); } });
+    P = clamp((1 - H) / 0.4);
+  }
+
+  // S: speed
+  const times = rec.map(function (r) { return r.timeout ? CONFIG.CHOOSE_MS : (r.rt || 0); });
+  const med = median(times);
+  const S = clamp((PC.SLOW_MS - med) / (PC.SLOW_MS - PC.FAST_MS));
+
+  // F: flexibility after a loss (falls back to the overall switch rate when there are too few losses)
+  let lossN = 0, lossShift = 0, allShift = 0;
+  for (let i = 1; i < h.pm.length; i++) {
+    const sh = h.pm[i] !== h.pm[i - 1];
+    if (sh) allShift++;
+    if (h.res[i - 1] === 1) { lossN++; if (sh) lossShift++; }
+  }
+  const allRate = h.pm.length > 1 ? allShift / (h.pm.length - 1) : 2 / 3;
+  const shiftRate = lossN >= 2 ? lossShift / lossN : allRate;
+  const F = clamp((shiftRate - 1 / 3) / (2 / 3));
+
+  // R: boldness
+  const R = clamp(((cnt[0] + cnt[2]) / n - 0.5) / 0.4);
+
+  // Boldness / caution only count when they stand out from random play (random is about R = 0.42).
+  const Rb = clamp((R - 0.42) / 0.58), Rs = clamp((0.42 - R) / 0.42);
+  const fit = {
+    strateji: 0.45 * F + 0.35 * (1 - P) + 0.20 * (1 - S),
+    refleks:  0.85 * S + 0.15 * R - 0.10,
+    ritual:   0.75 * P + 0.15 * (1 - F) - 0.10,
+    atilgan:  0.65 * Rb + 0.25 * S - 0.05,
+    temkinli: 0.65 * Rs + 0.25 * (1 - S) - 0.05,
+    kaos:     0.65 * (1 - P) + 0.35 * S - 0.05,
+    inatci:   0.80 * (1 - F) + 0.20 * P - 0.05
+  };
+  let id = 'kaos';
+  Object.keys(fit).forEach(function (k) { if (fit[k] > fit[id]) id = k; });
+  // A clearly dominant move says more about style than anything else.
+  const topCnt = Math.max(cnt[0], cnt[1], cnt[2]);
+  if (topCnt / n >= PC.DOMINANT) id = cnt.indexOf(topCnt) === 1 ? 'temkinli' : 'atilgan';
+
+  // Facts from the player's own data
+  const facts = [];
+  facts.push('Tipik karar sürün ' + (med / 1000).toFixed(1).replace('.', ',') + ' saniye.');
+  const fav = cnt.indexOf(Math.max(cnt[0], cnt[1], cnt[2]));
+  facts.push('En çok oynadığın hamle ' + MOVES[fav].lower + ' (%' + Math.round(cnt[fav] / n * 100) + ').');
+  let run = 0, bestRun = 0;
+  rec.forEach(function (r) { if (!r.timeout && r.res === 0) { run++; bestRun = Math.max(bestRun, run); } else run = 0; });
+  if (bestRun >= 2) facts.push('En uzun galibiyet serin ' + bestRun + ' tur.');
+  else if (lossN >= 2) facts.push('Kaybettikten sonra hamleni değiştirme oranın %' + Math.round(shiftRate * 100) + '.');
+
+  return {
+    id: id, p: PERSONAS[id], facts: facts,
+    meters: [
+      { n: 'Öngörülebilirlik', lo: 'Sürpriz', hi: 'Ezber', v: P },
+      { n: 'Karar hızı', lo: 'Düşünür', hi: 'Refleks', v: S },
+      { n: 'Kayıptan sonra', lo: 'İnatçı', hi: 'Esnek', v: F },
+      { n: 'Hamle tarzı', lo: 'Temkinli', hi: 'Atak', v: R }
+    ]
+  };
+}
+
+/* ===== 3. SES ===== */
+// Small localStorage wrapper: every access is guarded, the game works without it.
+const store = {
+  get: function (k) { try { return window.localStorage.getItem(k); } catch (e) { return null; } },
+  set: function (k, v) { try { window.localStorage.setItem(k, v); return true; } catch (e) { return false; } }
+};
+
+// Web Audio effects generated on the fly (no files). Unsupported APIs are skipped silently.
+const Sfx = (function () {
+  let ctx = null, master = null, failed = false, muted = false;
+  function ensure() {
+    if (ctx) return true;
+    if (failed) return false;
+    try {
+      const AC = window.AudioContext || window.webkitAudioContext;
+      if (!AC) { failed = true; return false; }
+      ctx = new AC();
+      master = ctx.createGain();
+      master.gain.value = 0.22;
+      master.connect(ctx.destination);
+      return true;
+    } catch (e) { ctx = null; failed = true; return false; }
+  }
+  // Must be called from a user gesture (mobile autoplay policy).
+  function unlock() {
+    if (!ensure()) return;
+    try { if (ctx.state === 'suspended') ctx.resume(); } catch (e) {}
+  }
+  function tone(freq, t, dur, type, vol, toFreq) {
+    const o = ctx.createOscillator(), g = ctx.createGain();
+    o.type = type || 'sine';
+    o.frequency.setValueAtTime(freq, t);
+    if (toFreq) o.frequency.exponentialRampToValueAtTime(toFreq, t + dur);
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(vol || 0.5, t + 0.012);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    o.connect(g); g.connect(master);
+    o.start(t); o.stop(t + dur + 0.03);
+  }
+  const BANK = {
+    tap:     function (t) { tone(620, t, 0.07, 'triangle', 0.5, 420); },
+    start:   function (t) { tone(392, t, 0.1, 'square', 0.22); tone(523, t + 0.09, 0.1, 'square', 0.22); tone(784, t + 0.18, 0.18, 'square', 0.22); },
+    scan:    function (t) { for (let i = 0; i < 4; i++) tone(500 + i * 140, t + i * 0.06, 0.05, 'square', 0.1); },
+    lock:    function (t) { tone(180, t, 0.05, 'square', 0.3); tone(120, t + 0.07, 0.09, 'square', 0.3); },
+    beat:    function (t, i) { tone(i === 2 ? 880 : 440 + i * 60, t, i === 2 ? 0.16 : 0.09, 'triangle', 0.5); },
+    win:     function (t) { [523, 659, 784, 1047].forEach(function (f, i) { tone(f, t + i * 0.07, 0.16, 'triangle', 0.45); }); },
+    lose:    function (t) { tone(300, t, 0.5, 'sawtooth', 0.25, 90); },
+    draw:    function (t) { tone(440, t, 0.12, 'triangle', 0.4); tone(440, t + 0.14, 0.12, 'triangle', 0.4); },
+    timeout: function (t) { tone(220, t, 0.12, 'square', 0.22); tone(165, t + 0.14, 0.25, 'square', 0.22); },
+    final:   function (t) { [392, 523, 659, 784, 1047].forEach(function (f, i) { tone(f, t + i * 0.1, 0.3, 'triangle', 0.4); }); }
+  };
+  return {
+    unlock: unlock,
+    setMuted: function (m) { muted = !!m; },
+    isMuted: function () { return muted; },
+    play: function (name, arg) {
+      if (muted || !ctx || !BANK[name]) return;
+      try { BANK[name](ctx.currentTime + 0.01, arg); } catch (e) {}
+    }
+  };
+})();
+
+const Haptic = {
+  buzz: function (pattern) { try { if (navigator.vibrate) navigator.vibrate(pattern); } catch (e) {} }
+};
+
+/* ===== 4. UI ===== */
+function $(id) { return document.getElementById(id); }
+const ICONS = ['ic-rock', 'ic-paper', 'ic-scissors'];
+const REDUCED = (function () {
+  try { return !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches); } catch (e) { return false; }
+})();
+
+function restart(node, cls) { node.classList.remove(cls); void node.offsetWidth; node.classList.add(cls); }
+
+function mountAvatar(host, mood) {
+  const tpl = $('tplBilen');
+  const svg = tpl.content.firstElementChild.cloneNode(true);
+  svg.setAttribute('data-mood', mood);
+  const t = svg.querySelector('.badge-text');
+  if (t) t.textContent = CONFIG.BADGE_TEXT;
+  host.appendChild(svg);
+  return svg;
+}
+function setMood(svg, mood) { svg.setAttribute('data-mood', mood); }
+
+// Animated number counter (score). One running tween per element.
+function tween(el, from, to, ms) {
+  const token = {};
+  el._tw = token;
+  if (REDUCED || from === to || ms <= 0) { el.textContent = String(to); return; }
+  const t0 = performance.now();
+  (function step() {
+    if (el._tw !== token) return;
+    const k = Math.min(1, (performance.now() - t0) / ms), e = 1 - Math.pow(1 - k, 3);
+    el.textContent = String(Math.round(from + (to - from) * e));
+    if (k < 1) requestAnimationFrame(step);
+  })();
+}
+
+// Light confetti: a few DOM nodes animated with transform/opacity only.
+function burst(host, count) {
+  if (REDUCED) return;
+  const cols = ['#2340e0', '#0f1b66', '#ffffff', '#16b36b', '#d6103f'];
+  for (let i = 0; i < count; i++) {
+    const p = document.createElement('i');
+    const a = Math.random() * Math.PI * 2, d = 60 + Math.random() * 70;
+    p.style.setProperty('--x', Math.round(Math.cos(a) * d) + 'px');
+    p.style.setProperty('--y', Math.round(Math.sin(a) * d - 30) + 'px');
+    p.style.setProperty('--r', Math.round(Math.random() * 540 - 270) + 'deg');
+    p.style.background = cols[i % cols.length];
+    host.appendChild(p);
+    setTimeout(function () { if (p.parentNode) p.parentNode.removeChild(p); }, 1000);
+  }
+}
+
+// BİLEN's lines. Short, cheeky, never rude. The same line is never repeated back to back.
+const LINES = {
+  warm: ['Seni tanımam lazım.', 'İlk hamlelerini not alıyorum.', 'Henüz seni bilmiyorum.', 'Veri topluyorum…', 'Isınıyorum. Sen de ısın.', 'İlk denek hazır mı?'],
+  think: ['Kalıbına bakıyorum…', 'Seni okuyorum…', 'Hesaplıyorum…', 'Verilerine bakıyorum…', 'Bir saniye. Düşünüyorum.', 'Olasılıklar dönüyor…'],
+  lock: ['Hamlem kilitli.', 'Seçtim. Sıra sende.', 'Kilitlendi. Cayma yok.', 'Hamlem hazır.', 'Ben hazırım. Sen?', 'Değiştirmem. Söz.'],
+  bilenWin: ['Bunu tahmin etmiştim.', 'Alışkanlıkların seni ele veriyor.', 'Bu kadar belli mi oluyor?', 'Notlarıma bir satır daha.', 'Kalıbını gördüm.', 'Kolay geldi.', 'Seni okudum.'],
+  playerWin: ['Hmm… bunu hesaplamamıştım.', 'Modelim güncelleniyor…', 'Şanslıydın. Bu sefer.', 'Bunu not aldım.', 'Hata payım yüksekmiş.', 'Hoşuma gitti. Biraz da sinirlendim.'],
+  draw: ['Aynı şeyi düşündük.', 'Berabere. İlginç.', 'Zihin okuması gibi.', 'Ayna gibiyiz.', 'Eşitlik. Şimdilik.', 'Yine de seni öğreniyorum.'],
+  streak: ['Rastgele mi oynuyorsun? Hoşuma gitmedi.', 'Üst üste mi? Şüpheleniyorum.', 'Bu seri bana yakışmadı.', 'Şu an seni çözemiyorum.', 'Tamam, ciddiye alıyorum.', 'Sistemde hata mı var?'],
+  timeout: ['Geç kaldın. Ben beklemem.', 'Süre doldu. Bu tur benim.', 'Düşünmek de hamledir. Ama geç.', 'Tik tak. Bitti.', 'Hızlı ol. Ben hızlıyım.', 'Uyudun mu? Süre bitti.'],
+  milestone: {
+    5:  { low: ['Beş tur oldu. Seni çözemedim.', 'Henüz kalıp yok. Dikkat çekici.'], mid: ['Beş tur… Bir şeyler sezdim.', 'Ezberlemeye başladım.'], high: ['Beş turda bayağı öğrendim.', 'Seni okumaya başladım.'] },
+    10: { low: ['Yarı yoldayız. Hâlâ sis var.', 'Rastgele misin sen?'], mid: ['Yarıdayız. Bir kalıp var.', 'Biraz çözdüm seni.'], high: ['Yarıda. Neredeyse çözdüm.', 'Alışkanlıkların belli oluyor.'] },
+    15: { low: ['Son çeyrek. Hâlâ gizemlisin.', 'Şaşırtıcı derecede dağınıksın.'], mid: ['Son çeyrek. Yaklaşıyorum.', 'Net değil ama bir şey var.'], high: ['Son çeyrek. Seni biliyorum.', 'Bundan sonrası kolay.'] }
+  }
+};
+const lastPick = {};
+function pickLine(key, arr) {
+  if (arr.length === 1) return arr[0];
+  let i, guard = 0;
+  do { i = Math.floor(Math.random() * arr.length); guard++; } while (i === lastPick[key] && guard < 30);
+  lastPick[key] = i;
+  return arr[i];
+}
+function confLabel(conf) {
+  for (let i = 0; i < CONFIG.CONF_LABELS.length; i++) if (conf < CONFIG.CONF_LABELS[i].max) return CONFIG.CONF_LABELS[i].text;
+  return CONFIG.CONF_LABELS[CONFIG.CONF_LABELS.length - 1].text;
+}
+
+/* ===== 5. EKRANLAR ===== */
+const DEBUG = /[?&]debug=1(&|$)/.test(window.location.search);
+
+const G = {
+  screen: 'intro', round: 0, score: 0, shownScore: 0, streak: 0, wins: 0, losses: 0, draws: 0,
+  rec: [], phase: 'idle', lock: null, chooseLeft: 0, picked: -1, model: null, isBest: false, persona: null
+};
+const el = {};
+const avatars = {};
+let progEls = [];
+
+// ---- Game clock: all game timers run on it, so one flag pauses everything ----
+const Clock = (function () {
+  let tasks = [], last = 0;
+  const holds = {};
+  const api = {
+    onTick: null,
+    hold: function (reason, on) { holds[reason] = !!on; },
+    paused: function () { return !!(holds.away || holds.rotate); },
+    after: function (ms, fn) { const t = { left: ms, fn: fn }; tasks.push(t); return t; },
+    clear: function () { tasks = []; },
+    start: function () {
+      last = performance.now();
+      requestAnimationFrame(function frame() {
+        requestAnimationFrame(frame);
+        const now = performance.now();
+        const dt = Math.min(Math.max(now - last, 0), 100);   // clamp: a long hidden period never fast-forwards the game
+        last = now;
+        if (api.paused()) return;
+        tasks.forEach(function (t) { t.left -= dt; });
+        const due = tasks.filter(function (t) { return t.left <= 0; });
+        tasks = tasks.filter(function (t) { return t.left > 0; });
+        due.forEach(function (t) { t.fn(); });
+        if (api.onTick) api.onTick(dt);
+      });
+    }
+  };
+  return api;
+})();
+
+function showScreen(name) {
+  G.screen = name;
+  ['intro', 'game', 'final'].forEach(function (k) { $('screen-' + k).classList.toggle('active', k === name); });
+}
+function randMove() { return Math.floor(Math.random() * 3); }
+
+// ---- Painting helpers ----
+function paintCard(card, kind, move) {
+  card.className = 'card ' + kind;
+  let html = '';
+  if (kind === 'think' || kind === 'wait' || kind === 'hidden') html = '<span class="q">?</span>';
+  else if (kind === 'locked') html = '<svg class="big" aria-hidden="true"><use href="#ic-lock"/></svg>';
+  else if (kind === 'show') html = '<svg class="big" aria-hidden="true"><use href="#' + ICONS[move] + '"/></svg>';
+  else if (kind === 'clock') html = '<svg class="big" aria-hidden="true"><use href="#ic-clock"/></svg>';
+  card.innerHTML = html;
+}
+function setMoves(on) {
+  el.moveBtns.forEach(function (b) { b.disabled = !on; b.classList.remove('picked', 'dim'); });
+  el.moves.classList.toggle('ready', on);
+}
+function paintHud() {
+  el.hudRound.textContent = String(Math.max(1, G.round));
+  el.hudStreak.textContent = String(G.streak);
+  el.hudStreakPill.classList.toggle('hot', G.streak >= CONFIG.SCORE.STREAK_FROM);
+}
+function setConf(conf, warm) {
+  const pct = Math.round(conf * 100);
+  el.bar.classList.remove('scan');
+  el.confFill.style.transform = 'scaleX(' + conf.toFixed(3) + ')';
+  el.confPct.textContent = '%' + pct;
+  el.bar.setAttribute('aria-valuenow', String(pct));
+  el.confLabel.textContent = warm ? 'BİLEN seni tanıyor…' : confLabel(conf);
+}
+function say(text) { el.bubble.textContent = text; }
+
+function debugPanel(tag) {
+  if (!DEBUG || !G.lock) return;
+  const p = G.lock.pred, w = G.model.weights();
+  const f = function (x) { return x.toFixed(2); };
+  let t = 'Tur ' + G.round + ' · ' + tag + '\n';
+  t += 'Birleşik  Taş ' + f(p.dist[0]) + '  Kağıt ' + f(p.dist[1]) + '  Makas ' + f(p.dist[2]) + '\n';
+  t += 'P=' + MOVES[p.P].name + '  güven=' + f(p.conf) + '  BİLEN→' + MOVES[G.lock.move].name +
+       (G.lock.warm ? ' (ısınma)' : G.lock.explored ? ' (keşif)' : '') + '\n';
+  w.forEach(function (x, i) {
+    const d = p.views[i].dist;
+    t += (x.label + '                         ').slice(0, 27) + 'w=' + f(x.w) + ' | ' + f(d[0]) + ' ' + f(d[1]) + ' ' + f(d[2]) + '\n';
+  });
+  el.debug.textContent = t;
+}
+
+// ---- Round flow: think -> lock -> choose -> reveal -> result -> next ----
+function startGame() {
+  Sfx.unlock();
+  Clock.clear();
+  G.model = createModel();
+  G.round = 0; G.score = 0; G.shownScore = 0; G.streak = 0; G.wins = 0; G.losses = 0; G.draws = 0;
+  G.rec = []; G.phase = 'idle'; G.lock = null; G.picked = -1; G.persona = null;
+  el.hudScore.textContent = '0';
+  paintHud();
+  showScreen('game');
+  Sfx.play('start');
+  Haptic.buzz(15);
+  Clock.after(450, beginRound);
+}
+
+function beginRound() {
+  G.round += 1;
+  const warm = G.round <= CONFIG.WARMUP_ROUNDS;
+  // FAIRNESS: BİLEN commits to its move right here, BEFORE the player can choose.
+  // predict() reads past rounds only; this round's pick does not exist yet and is never consulted.
+  const pred = G.model.predict();
+  let move, explored = false;
+  if (warm) move = randMove();
+  else if (Math.random() < CONFIG.EXPLORE_RATE) { move = randMove(); explored = true; }
+  else move = counter(pred.P);
+  G.lock = { pred: pred, move: move, warm: warm, explored: explored };
+  G.phase = 'think'; G.picked = -1;
+
+  paintHud();
+  progEls.forEach(function (s, i) { s.className = i < G.round - 1 ? 'on' : (i === G.round - 1 ? 'cur' : ''); });
+  el.rhythm.className = 'rhythm';
+  el.rhythm.textContent = 'BİLEN düşünüyor…';
+  el.result.innerHTML = '';
+  paintCard(el.cardB, 'think');
+  paintCard(el.cardP, 'wait');
+  setMoves(false);
+  el.bar.classList.add('scan');
+  el.confPct.textContent = '%…';
+  el.chip.classList.remove('on');
+  el.chipText.textContent = 'Düşünüyor…';
+  el.confLabel.textContent = warm ? 'BİLEN seni tanıyor…' : 'Hesaplanıyor…';
+  el.timer.classList.remove('low');
+  el.timerFill.style.transform = 'scaleX(1)';
+  setMood(avatars.game, 'think');
+  say(pickLine(warm ? 'warm' : 'think', warm ? LINES.warm : LINES.think));
+  Sfx.play('scan');
+  debugPanel('düşünüyor');
+  Clock.after(CONFIG.THINK_MS, lockIn);
+}
+
+function lockIn() {
+  G.phase = 'choose';
+  G.chooseLeft = CONFIG.CHOOSE_MS;
+  setConf(G.lock.pred.conf, G.lock.warm);
+  el.chip.classList.add('on');
+  el.chipText.textContent = 'Hamle kilitli';
+  paintCard(el.cardB, 'locked');
+  el.rhythm.textContent = 'Hamleni seç!';
+  setMood(avatars.game, 'lock');
+  say(pickLine('lock', LINES.lock));
+  setMoves(true);
+  Sfx.play('lock');
+  Haptic.buzz(12);
+  debugPanel('kilitli');
+}
+
+Clock.onTick = function (dt) {
+  if (G.phase !== 'choose') return;
+  G.chooseLeft -= dt;
+  const r = Math.max(0, G.chooseLeft / CONFIG.CHOOSE_MS);
+  el.timerFill.style.transform = 'scaleX(' + r.toFixed(3) + ')';
+  el.timer.classList.toggle('low', r < 0.3);
+  if (G.chooseLeft <= 0) timeout();
+};
+
+function pick(move) {
+  if (G.phase !== 'choose') return;
+  G.phase = 'reveal';
+  G.picked = move;
+  const d = G.lock;
+  const res = outcome(move, d.move);
+  // Decision time (pause-safe: derived from the game clock, not wall time). Used by the personality analysis.
+  const rt = Math.max(0, Math.round(CONFIG.CHOOSE_MS - G.chooseLeft));
+  G.model.learn(move, d.move, res);
+  const rec = { round: G.round, warm: d.warm, conf: d.pred.conf, P: d.pred.P, actual: move, bilen: d.move,
+                res: res, hit: d.warm ? null : d.pred.P === move, timeout: false, rt: rt };
+  G.rec.push(rec);
+
+  el.moveBtns.forEach(function (b, i) { b.disabled = true; b.classList.add(i === move ? 'picked' : 'dim'); });
+  el.moves.classList.remove('ready');
+  paintCard(el.cardP, 'hidden');
+  Sfx.play('tap');
+  Haptic.buzz(10);
+
+  const B = CONFIG.BEAT_MS;
+  beat(0);
+  Clock.after(B, function () { beat(1); });
+  Clock.after(2 * B, function () { beat(2); });
+  Clock.after(3 * B, function () { reveal(rec); });
+}
+
+function beat(i) {
+  el.rhythm.className = 'rhythm';
+  el.rhythm.textContent = ['Taş…', 'Kağıt…', 'Makas!'][i];
+  restart(el.rhythm, 'pop');
+  restart(el.cardB, 'beat');
+  restart(el.cardP, 'beat');
+  Sfx.play('beat', i);
+}
+
+function timeout() {
+  G.phase = 'reveal';
+  const d = G.lock;
+  const rec = { round: G.round, warm: d.warm, conf: d.pred.conf, P: d.pred.P, actual: -1, bilen: d.move,
+                res: 1, hit: null, timeout: true, rt: CONFIG.CHOOSE_MS };
+  G.rec.push(rec);              // no model update: the player never moved
+  setMoves(false);
+  el.timerFill.style.transform = 'scaleX(0)';
+  Clock.after(CONFIG.TIMEOUT_REVEAL_MS, function () { reveal(rec); });
+}
+
+function reveal(rec) {
+  G.phase = 'result';
+  const d = G.lock, S = CONFIG.SCORE;
+  let gain = 0, bonus = 0, kind;
+  paintCard(el.cardB, 'show', d.move);
+  if (rec.timeout) paintCard(el.cardP, 'clock'); else paintCard(el.cardP, 'show', rec.actual);
+
+  if (rec.timeout) { kind = 'timeout'; G.losses++; G.streak = 0; }
+  else if (rec.res === 0) {
+    kind = 'win'; G.wins++; G.streak++; gain = S.WIN;
+    if (G.streak >= S.STREAK_FROM) { bonus = S.STREAK_BONUS; gain += bonus; }
+  } else if (rec.res === 1) { kind = 'lose'; G.losses++; G.streak = 0; gain = S.LOSS; }
+  else { kind = 'draw'; G.draws++; G.streak = 0; gain = S.DRAW; }
+  G.score += gain;
+  tween(el.hudScore, G.shownScore, G.score, 500);
+  G.shownScore = G.score;
+  paintHud();
+  progEls[G.round - 1].className = 'on';
+
+  const titles = { win: ['KAZANDIN!', 'win'], lose: ['BİLEN KAZANDI', 'lose'], draw: ['BERABERE', 'draw'], timeout: ['SÜRE DOLDU', 'lose'] };
+  el.rhythm.className = 'rhythm res-' + titles[kind][1];
+  el.rhythm.textContent = titles[kind][0];
+  restart(el.rhythm, 'pop');
+  el.result.innerHTML = '<span class="gain">+' + gain + '</span>' + (bonus ? '<span class="bonus">seri +' + bonus + '</span>' : '') +
+    '<span class="sr">' + (rec.timeout ? 'Süre doldu.' : 'BİLEN ' + MOVES[d.move].name + ', sen ' + MOVES[rec.actual].name + ' oynadın.') + '</span>';
+
+  if (kind === 'win') {
+    el.cardP.classList.add('win'); el.cardB.classList.add('lose');
+    setMood(avatars.game, 'lose');
+    burst(el.fx, 14);
+    Sfx.play('win'); Haptic.buzz([18, 30, 18]);
+    Clock.after(800, function () { if (G.phase === 'result') setMood(avatars.game, 'learn'); });
+  } else if (kind === 'draw') {
+    setMood(avatars.game, 'draw');
+    Sfx.play('draw'); Haptic.buzz(20);
+  } else {
+    if (!rec.timeout) { el.cardB.classList.add('win'); el.cardP.classList.add('lose'); }
+    setMood(avatars.game, 'win');
+    restart(el.duel, 'shake');
+    Sfx.play(rec.timeout ? 'timeout' : 'lose'); Haptic.buzz(60);
+  }
+
+  // BİLEN's comment: milestone > streak > result-specific
+  let text;
+  const ms = LINES.milestone[G.round];
+  if (ms && CONFIG.MILESTONES.indexOf(G.round) >= 0) {
+    const ev = G.rec.filter(function (r) { return !r.warm && !r.timeout; });
+    const acc = ev.length ? ev.filter(function (r) { return r.hit; }).length / ev.length : 0;
+    const bucket = ev.length < 2 || acc < 0.34 ? 'low' : (acc < 0.6 ? 'mid' : 'high');
+    text = pickLine('ms' + G.round + bucket, ms[bucket]);
+  } else if (kind === 'win') {
+    text = G.streak >= S.STREAK_FROM ? pickLine('streak', LINES.streak) : pickLine('playerWin', LINES.playerWin);
+  } else if (kind === 'lose') text = pickLine('bilenWin', LINES.bilenWin);
+  else if (kind === 'timeout') text = pickLine('timeout', LINES.timeout);
+  else text = pickLine('draw', LINES.draw);
+  say(text);
+  debugPanel('sonuç');
+  Clock.after(CONFIG.RESULT_MS, nextRound);
+}
+
+function nextRound() {
+  if (G.round >= CONFIG.ROUNDS) finish(); else beginRound();
+}
+
+// ---- Final screen ----
+function computeStats() {
+  const ev = G.rec.filter(function (r) { return !r.warm && !r.timeout; });
+  const hits = ev.filter(function (r) { return r.hit; }).length;
+  const acc = ev.length ? hits / ev.length : 0;
+  let rank = CONFIG.RANK_NONE;
+  if (ev.length) {
+    for (let i = 0; i < CONFIG.RANKS.length; i++) if (acc < CONFIG.RANKS[i].max) { rank = CONFIG.RANKS[i].name; break; }
+  }
+  return { ev: ev, hits: hits, acc: acc, rank: rank };
+}
+
+function chartHTML(rec) {
+  const W = 300, H = 104, L = 26, R = 6, T = 12, Bt = 18, n = CONFIG.ROUNDS;
+  const bw = (W - L - R) / n, ph = H - T - Bt;
+  const y = function (v) { return (T + ph * (1 - v)).toFixed(1); };
+  let s = '<svg viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="Tur başına BİLEN’in tahmin güveni ve isabeti">';
+  s += '<line x1="' + L + '" y1="' + y(0) + '" x2="' + (W - R) + '" y2="' + y(0) + '" stroke="#0f1b66" stroke-opacity=".35"/>';
+  s += '<line x1="' + L + '" y1="' + y(CONFIG.RANDOM_LEVEL) + '" x2="' + (W - R) + '" y2="' + y(CONFIG.RANDOM_LEVEL) + '" stroke="#d6103f" stroke-dasharray="3 3"/>';
+  s += '<text x="' + (L - 3) + '" y="' + (Number(y(CONFIG.RANDOM_LEVEL)) + 3) + '" text-anchor="end">%33</text>';
+  s += '<text x="' + (L - 3) + '" y="' + (Number(y(1)) + 3) + '" text-anchor="end">%100</text>';
+  for (let i = 0; i < n; i++) {
+    const r = rec[i];
+    const x = L + i * bw + bw * 0.15, w = bw * 0.7, cx = x + w / 2;
+    if (r) {
+      const top = y(r.conf), h = (ph * r.conf).toFixed(1);
+      s += '<rect x="' + x.toFixed(1) + '" y="' + top + '" width="' + w.toFixed(1) + '" height="' + h + '" rx="1.5" fill="' + (r.warm ? '#c9d0f5' : '#2340e0') + '"/>';
+      const my = (Number(top) - 5).toFixed(1);
+      if (r.warm) { /* warm-up: no scored prediction */ }
+      else if (r.timeout) s += '<text x="' + cx.toFixed(1) + '" y="' + (Number(my) + 3) + '" text-anchor="middle" style="fill:#d6103f;font-size:10px">×</text>';
+      else if (r.hit) s += '<circle cx="' + cx.toFixed(1) + '" cy="' + my + '" r="3" fill="#0f1b66"/>';
+      else s += '<circle cx="' + cx.toFixed(1) + '" cy="' + my + '" r="2.6" fill="none" stroke="#0f1b66" stroke-width="1.3"/>';
+    }
+    const lab = i + 1;
+    if (lab === 1 || lab % 5 === 0) s += '<text x="' + (L + i * bw + bw / 2).toFixed(1) + '" y="' + (H - 5) + '" text-anchor="middle">' + lab + '</text>';
+  }
+  return s + '</svg>';
+}
+
+function heatHTML(t) {
+  let h = '<table class="heat"><caption>Satırlar önceki hamleni, sütunlar sonraki hamleni gösterir.</caption><thead><tr><td style="padding:0"></td>';
+  for (let m = 0; m < 3; m++) h += '<th scope="col"><svg class="mi" aria-hidden="true"><use href="#' + ICONS[m] + '"/></svg>' + MOVES[m].name + '</th>';
+  h += '</tr></thead><tbody>';
+  for (let r = 0; r < 3; r++) {
+    const row = t[r], n = row[0] + row[1] + row[2], mx = Math.max(row[0], row[1], row[2]);
+    h += '<tr><th scope="row"><svg class="mi" aria-hidden="true"><use href="#' + ICONS[r] + '"/></svg>' + MOVES[r].name + '</th>';
+    for (let c = 0; c < 3; c++) {
+      const share = n ? row[c] / n : 0;
+      h += '<td class="' + (row[c] > 0 && row[c] === mx ? 'top1' : '') + '" style="background:rgba(35,64,224,' + (0.06 + 0.45 * share).toFixed(2) + ')"><b>' + row[c] + '</b><small>' + Math.round(share * 100) + '%</small></td>';
+    }
+    h += '</tr>';
+  }
+  return h + '</tbody></table>';
+}
+
+function renderPersona(r) {
+  el.pType.textContent = r.p.name;
+  el.pTag.textContent = r.p.tag;
+  el.pText.textContent = r.p.text;
+  let m = '';
+  r.meters.forEach(function (x) {
+    m += '<div class="mtr"><span class="mtr-n">' + x.n + '</span><div class="mtr-row"><em>' + x.lo + '</em><span class="mtr-t"><i style="left:' +
+         Math.round(x.v * 100) + '%"></i></span><em>' + x.hi + '</em></div></div>';
+  });
+  el.pMeters.innerHTML = m;
+  el.pMeters.hidden = !r.meters.length;
+  el.pFacts.innerHTML = r.facts.map(function (t) { return '<li>' + t + '</li>'; }).join('');
+  el.pNote.hidden = !r.meters.length;
+}
+
+function renderFinal(st) {
+  const verdict = G.wins > G.losses ? 'w' : (G.wins < G.losses ? 'l' : 'd');
+  el.fTitle.textContent = verdict === 'w' ? 'BİLEN’i yendin!' : (verdict === 'l' ? 'BİLEN kazandı' : 'Berabere');
+  el.fTitle.className = verdict;
+  el.fRecord.textContent = 'Sen ' + G.wins + ', BİLEN ' + G.losses + ', berabere ' + G.draws;
+  el.fRank.textContent = st.rank;
+  const best = parseInt(store.get('bilen.best') || '0', 10) || 0;
+  G.isBest = G.score > best;
+  if (G.isBest) store.set('bilen.best', String(G.score));
+  el.fBest.textContent = G.isBest ? 'Yeni rekor!' : (best ? 'En iyi: ' + best : '');
+  el.fAcc.innerHTML = st.ev.length
+    ? 'BİLEN hamlelerini <b>%' + Math.round(st.acc * 100) + '</b> doğrulukla tahmin etti. Rastgele oynasaydın bu oran yaklaşık %' + Math.round(CONFIG.RANDOM_LEVEL * 100) + ' olurdu.'
+    : 'BİLEN seni tahmin edecek kadar hamle göremedi.';
+  el.fChart.innerHTML = chartHTML(G.rec);
+
+  const ins = buildInsights(G.model.hist);
+  let li = '';
+  if (ins.length) ins.forEach(function (t) { li += '<li>' + t + '</li>'; });
+  else if (G.model.hist.pm.length < 4) li = '<li class="none">Seni tanıyacak kadar hamle görmedim.</li>';
+  else li = '<li class="none">Seni çözemedim! Neredeyse tamamen rastgeleydin.</li>';
+  el.fInsights.innerHTML = li;
+
+  el.fHeat.innerHTML = heatHTML(rawTables(G.model.hist).m1);
+  const ws = G.model.weights().slice().sort(function (a, b) { return b.w - a.w; });
+  el.fTop.textContent = G.model.hist.pm.length ? 'Bu oyunda en çok güvendiği ipucu: ' + ws[0].label + '.' : '';
+  let wh = '';
+  ws.forEach(function (x) {
+    wh += '<div class="wrow"><span>' + x.label + '</span><span class="tr"><i style="width:' + Math.round(x.w * 100) + '%"></i></span><span>%' + Math.round(x.w * 100) + '</span></div>';
+  });
+  el.fWeights.innerHTML = wh;
+
+  G.persona = buildPersona(G.rec, G.model.hist);
+  renderPersona(G.persona);
+}
+
+function finish() {
+  G.phase = 'done';
+  Clock.clear();
+  const st = computeStats();
+  G.stats = st;
+  showScreen('final');
+  el.final.classList.add('is-analyzing');
+  el.res.classList.remove('go');
+  el.final.scrollTop = 0;
+  el.details.open = false;
+  el.saveForm.hidden = false; el.saveDone.hidden = true; el.fErr.textContent = ''; el.btnSave.disabled = false;
+  setMood(avatars.analyze, 'analyze');
+  el.fScore.textContent = '0';
+  renderFinal(st);
+  Sfx.play('scan');
+  Clock.after(CONFIG.ANALYZE_MS, function () {
+    el.final.classList.remove('is-analyzing');
+    const verdict = G.wins > G.losses ? 'lose' : (G.wins < G.losses ? 'win' : 'draw');   // BİLEN's mood is the mirror of the player's result
+    setMood(avatars.final, verdict);
+    void el.res.offsetWidth;
+    el.res.classList.add('go');
+    tween(el.fScore, 0, G.score, 900);
+    Sfx.play('final');
+    Haptic.buzz([20, 40, 20]);
+    if (CONFIG.BACKEND_ENABLED) loadBoard();
+  });
+}
+
+// ---- Backend skeleton (no backend yet: console + localStorage) ----
+// accuracy is a fraction 0..1 (BİLEN's hit rate over scored rounds). persona is the personality type id.
+function submitScore(payload) {
+  try { console.log('[BİLEN] submitScore', payload); } catch (e) {}
+  try {
+    const arr = JSON.parse(store.get('bilen.scores') || '[]');
+    arr.push(payload);
+    store.set('bilen.scores', JSON.stringify(arr.slice(-50)));
+  } catch (e) {}
+  if (CONFIG.BACKEND_ENABLED && CONFIG.BACKEND_URL && window.fetch) {
+    return window.fetch(CONFIG.BACKEND_URL, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) })
+      .then(function (r) { return r.ok; })
+      .catch(function () { return false; });
+  }
+  return Promise.resolve(true);
+}
+
+// Expected response: [{ nickname, score, rank }, ...]
+function fetchLeaderboard() {
+  if (!CONFIG.BACKEND_ENABLED || !CONFIG.BACKEND_URL || !window.fetch) return Promise.resolve([]);
+  return window.fetch(CONFIG.BACKEND_URL + '?top=10')
+    .then(function (r) { return r.json(); })
+    .then(function (list) { return Array.isArray(list) ? list : []; })
+    .catch(function () { return []; });
+}
+
+function loadBoard() {
+  fetchLeaderboard().then(function (list) {
+    el.boardList.innerHTML = '';
+    list.slice(0, 10).forEach(function (row) {
+      const li = document.createElement('li');
+      li.textContent = String(row.nickname) + ' — ' + String(row.score) + (row.rank ? ', ' + String(row.rank) : '');
+      el.boardList.appendChild(li);
+    });
+    el.board.hidden = !list.length;
+  });
+}
+
+function validContact(v) {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v) || /^@?[A-Za-z0-9._]{2,30}$/.test(v);
+}
+
+function onSave(e) {
+  e.preventDefault();
+  const nick = el.fNick.value.trim(), contact = el.fContact.value.trim(), consent = el.fConsent.checked;
+  let err = '';
+  if (nick.length < CONFIG.NAME_LEN[0] || nick.length > CONFIG.NAME_LEN[1]) err = 'Takma ad ' + CONFIG.NAME_LEN[0] + '–' + CONFIG.NAME_LEN[1] + ' karakter olmalı.';
+  else if (contact && !validContact(contact)) err = 'İletişim alanı e-posta ya da @kullanıcıadı gibi görünmüyor.';
+  else if (!consent) err = 'Kaydetmek için aydınlatma metnini onaylaman gerekiyor.';
+  el.fErr.textContent = err;
+  if (err) return;
+  el.btnSave.disabled = true;
+  const st = G.stats;
+  const payload = { nickname: nick, contact: contact, consent: consent, score: G.score, wins: G.wins, losses: G.losses, draws: G.draws,
+                    accuracy: Math.round(st.acc * 1000) / 1000, rank: st.rank, persona: G.persona ? G.persona.id : '',
+                    timestamp: new Date().toISOString() };
+  submitScore(payload).then(function (ok) {
+    if (ok) {
+      el.saveForm.hidden = true;
+      el.saveDone.hidden = false;
+      el.saveDone.textContent = 'Teşekkürler, ' + nick + '! Skorun kaydedildi.';
+      if (CONFIG.BACKEND_ENABLED) loadBoard();
+    } else {
+      el.fErr.textContent = 'Kaydedilemedi. Biraz sonra tekrar dene.';
+      el.btnSave.disabled = false;
+    }
+  });
+}
+
+// ---- Pause handling: tab hidden or landscape phone ----
+function checkOrientation() {
+  const touch = ('ontouchstart' in window) || ((navigator.maxTouchPoints || 0) > 0);
+  const on = touch && window.innerWidth > window.innerHeight && window.innerHeight < 480;
+  document.body.classList.toggle('rotate', on);
+  Clock.hold('rotate', on);
+}
+function onVisibility() {
+  if (document.hidden) {
+    Clock.hold('away', true);
+    return;
+  }
+  if (G.screen === 'game' && G.phase !== 'idle' && G.phase !== 'done') el.pause.hidden = false;   // wait for an explicit "Devam"
+  else Clock.hold('away', false);
+}
+
+function toggleMute() {
+  const m = !Sfx.isMuted();
+  Sfx.setMuted(m);
+  store.set('bilen.muted', m ? '1' : '0');
+  paintMute();
+  Sfx.unlock();
+  Sfx.play('tap');
+}
+function paintMute() {
+  const m = Sfx.isMuted();
+  el.muteUse.setAttribute('href', m ? '#ic-mute' : '#ic-sound');
+  el.btnMute.setAttribute('aria-label', m ? 'Sesi aç' : 'Sesi kapat');
+  el.btnMute.setAttribute('aria-pressed', m ? 'true' : 'false');
+}
+
+function init() {
+  ['hudRound', 'hudRounds', 'hudScore', 'hudStreak', 'hudStreakPill', 'btnMute', 'muteUse', 'prog', 'bubble', 'chip', 'chipText', 'confPct',
+   'bar', 'confFill', 'confLabel', 'arena', 'rhythm', 'duel', 'cardB', 'cardP', 'result', 'fx', 'timer', 'timerFill', 'moves', 'debug',
+   'fTitle', 'fRecord', 'fScore', 'fBest', 'fRank', 'fAcc', 'fChart', 'fInsights', 'fHeat', 'fTop', 'fWeights', 'saveForm', 'saveDone',
+   'pType', 'pTag', 'pText', 'pMeters', 'pFacts', 'pNote',
+   'fNick', 'fContact', 'fConsent', 'fErr', 'btnSave', 'btnJoin', 'board', 'boardList', 'btnReplay', 'pause', 'res'
+  ].forEach(function (id) { el[id] = $(id); });
+  el.final = $('screen-final');
+  el.details = el.final.querySelector('details');
+  el.moveBtns = Array.prototype.slice.call(el.moves.querySelectorAll('.move'));
+
+  Sfx.setMuted(store.get('bilen.muted') === '1');
+  paintMute();
+
+  avatars.intro = mountAvatar($('heroIntro'), 'idle');
+  avatars.game = mountAvatar($('heroGame'), 'idle');
+  avatars.analyze = mountAvatar($('heroAnalyze'), 'analyze');
+  avatars.final = mountAvatar($('heroFinal'), 'idle');
+
+  // Static texts driven by CONFIG
+  $('introCommunity').textContent = CONFIG.COMMUNITY_NAME;
+  $('introCommunity').hidden = !CONFIG.COMMUNITY_NAME;
+  const mins = Math.max(1, Math.round(CONFIG.ROUNDS * 5.5 / 60));
+  $('introMeta').textContent = CONFIG.ROUNDS + ' tur, yaklaşık ' + mins + ' dakika';
+  el.hudRounds.textContent = '/' + CONFIG.ROUNDS;
+  el.prog.style.gridTemplateColumns = 'repeat(' + CONFIG.ROUNDS + ',1fr)';
+  for (let i = 0; i < CONFIG.ROUNDS; i++) { const s = document.createElement('i'); el.prog.appendChild(s); progEls.push(s); }
+  const best = parseInt(store.get('bilen.best') || '0', 10) || 0;
+  if (best) { $('bestLine').hidden = false; $('bestLine').textContent = 'En iyi skorun: ' + best; }
+  $('privText').textContent = CONFIG.PRIVACY_TEXT;
+  if (CONFIG.PRIVACY_URL) { const a = $('privLink'); a.href = CONFIG.PRIVACY_URL; a.hidden = false; }
+  if (CONFIG.JOIN_URL) { el.btnJoin.href = CONFIG.JOIN_URL; el.btnJoin.hidden = false; $('joinName').textContent = CONFIG.COMMUNITY_NAME; }
+  el.board.hidden = true;
+  if (DEBUG) el.debug.hidden = false;
+
+  // Events
+  $('btnStart').addEventListener('click', startGame);
+  el.moveBtns.forEach(function (b) {
+    const m = parseInt(b.getAttribute('data-move'), 10);
+    b.addEventListener('pointerdown', function () { pick(m); });   // instant feedback on touch
+    b.addEventListener('click', function () { pick(m); });         // keyboard / fallback; pick() ignores duplicates
+  });
+  document.addEventListener('keydown', function (e) {
+    if (G.screen !== 'game') return;
+    const m = { '1': 0, '2': 1, '3': 2 }[e.key];
+    if (m !== undefined) pick(m);
+  });
+  el.btnMute.addEventListener('click', toggleMute);
+  el.btnReplay.addEventListener('click', startGame);
+  el.saveForm.addEventListener('submit', onSave);
+  $('btnResume').addEventListener('click', function () { el.pause.hidden = true; Clock.hold('away', false); Sfx.unlock(); });
+  ['pointerdown', 'touchend', 'click'].forEach(function (t) { document.addEventListener(t, Sfx.unlock, { passive: true, capture: true }); });
+  document.addEventListener('visibilitychange', onVisibility);
+  window.addEventListener('resize', checkOrientation);
+  window.addEventListener('orientationchange', checkOrientation);
+  checkOrientation();
+
+  Clock.start();
+}
+
+init();
+})();
+</script>
+</body>
+</html>
